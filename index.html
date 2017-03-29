@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html" charset="utf-8"/>
+	<title>Babylon - Getting started</title>
+	<script src="js/babylon.js"></script>
+	<script src="js/hand.js"></script>
+	<script src="js/babylon.gridmaterial.js"></script>
+	<style>
+		html, body {
+			overflow: hidden;
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+
+		#renderCanvas {
+			width: 100%;
+			height: 100%;
+			touch-action: none;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="renderCanvas"></canvas>
+	<script>
+		window.addEventListener('DOMContentLoaded', function() {
+
+			var canvas = document.getElementById('renderCanvas');
+
+			var engine = new BABYLON.Engine(canvas, true);
+
+			var createScene = function() {
+
+				var scene = new BABYLON.Scene(engine);
+				scene.clearColor = new BABYLON.Color3(0, 1, 0); 
+
+				// var assetsManager = new BABYLON.AssetsManager(scene);
+				// var textureTask = assetsManager.addTextureTask("image task", "assets/BackgroundPlains.png");
+				// textureTask.onSuccess = function(task) {
+				//     console.log(task.texture.width);
+				//     console.log(task.texture.height);
+				//     var width = task.texture.width;
+				//     var height = task.texture.height;
+				//     var bgPlane = BABYLON.MeshBuilder.CreatePlane('bgPlane', {'width' : width / 100, 'height' : height / 100, 'updatable' : true, 'sideOrientation' : BABYLON.Mesh.DEFAULTSIDE}, scene);
+				//     var bgMaterial = new BABYLON.StandardMaterial('bgMaterial', scene);
+				// 	bgMaterial.diffuseTexture = new BABYLON.Texture(task.texture, scene);  
+				// 	// bgPlane.position.y = task.image.height / 2;
+				// 	// bgPlane.position.z = 50;
+				// }
+				// assetsManager.load();				
+
+				//scene.clearColor = new BABYLON.Color3(0, 1, 0);
+				var light = new BABYLON.PointLight('Omni', new BABYLON.Vector3(0, 100, 100), scene);
+				//var camera = new BABYLON.ArcRotateCamera("Camera", 0, 0.8, 100, BABYLON.Vector3.Zero(), scene);
+				var camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3.Zero(), scene);
+				camera.position.y = 3;
+				camera.position.z = -10;
+				//camera.rotation.x = -Math.PI * 3;
+				var targetVec = new BABYLON.Vector3(0, 0, 3);
+				// camera.setTarget(BABYLON.Vector3.Zero());
+				camera.setTarget(targetVec);
+				camera.attachControl(canvas, false);
+
+				var spriteManagerPlayer = new BABYLON.SpriteManager('playerManagr', 'assets/player.png', 1, 64, scene);
+				player = new BABYLON.Sprite('player', spriteManagerPlayer);
+				player.invertU = -1;
+				player.position.y = 0.5;
+				player.position.x = -5.5;
+				player.position.z = 0.3;
+				//player.playAnimation(0, 10, true, 100);
+
+				scene.actionManager = new BABYLON.ActionManager(scene);
+				scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, function (evt) {
+					if (evt.sourceEvent.key == "d") {
+						player.position.x += 1;
+						player.playAnimation(0, 10, false, 75);
+					}
+					else if (evt.sourceEvent.key == "w") {
+						player.position.z += 1;
+						player.playAnimation(0, 10, false, 75);
+					}
+					else if (evt.sourceEvent.key == "a") {						
+						player.position.x -= 1;
+						player.playAnimation(0, 10, false, 75);
+					}
+					else if (evt.sourceEvent.key = "s") {
+						player.position.z -= 1;
+						player.playAnimation(0, 10, false, 75);
+					}
+				}));
+
+				var bgMaterial = new BABYLON.StandardMaterial('bgMaterial', scene);
+				bgMaterial.emissiveTexture = new BABYLON.Texture("assets/BackgroundPlains.png", scene);  
+				bgMaterial.emissiveTexture.hasAlpha = true;
+				bgMaterial.useAlphaFromEmissiveTexture;
+				bgMaterial.hasAlpha = true;
+				bgMaterial.backFaceCulling = false;
+				//bgMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+
+				var bgPlane = BABYLON.MeshBuilder.CreatePlane('bgPlane', {width: 35, height: 8}, scene, true, BABYLON.MeshBuilder.FRONTSIDE);	
+				bgPlane.material = bgMaterial;
+				//bgPlane.showBoundingBox = true;
+				var offsetY = bgPlane.height / 2; 
+				bgPlane.position = new BABYLON.Vector3(0, 2.5, 10); 
+				
+				
+				var parameters = {
+					"width" : 20,
+					"height" : 8, 
+					"updatable" : true,
+					"sideOrientation" : BABYLON.Mesh.DEFAULTSIDE
+				};
+				
+				plane = BABYLON.MeshBuilder.CreatePlane('Grid', parameters, scene);				
+				plane.rotation.x = Math.PI / 2;  
+
+				var grid = new BABYLON.GridMaterial('gridMaterial', scene)
+				grid.majorUnitFrequency = 0;
+
+				plane.material = grid;
+
+				// var whiteMaterial = new BABYLON.StandardMaterial("White", scene);
+				// whiteMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
+
+				// var blackMaterial = new BABYLON.StandardMaterial("Black", scene);
+				// blackMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+
+				var multiMat = new BABYLON.MultiMaterial("multi", scene);
+				// multiMat.subMaterials.push(whiteMaterial);
+				// multiMat.subMaterials.push(blackMaterial);
+
+				var grassMaterial1 = new BABYLON.StandardMaterial("Grass1", scene);
+				grassMaterial1.diffuseTexture = new BABYLON.Texture("assets/TilesGrassVariant0_128.png", scene);  
+
+				var grassMaterial2 = new BABYLON.StandardMaterial("Grass2", scene);
+				grassMaterial2.diffuseTexture = new BABYLON.Texture("assets/TilesGrassVariant1_128.png", scene);  
+
+				multiMat.subMaterials.push(grassMaterial1);
+				multiMat.subMaterials.push(grassMaterial2);
+
+
+				var xmin = -3;
+			    var zmin = -3;
+			    var xmax =  3;
+			    var zmax =  3;
+			    var precision = {
+			        "w" : 1,
+			        "h" : 1
+			    };
+			    var subdivisions = {
+			        'h' : 8,
+			        'w' : 8
+			    };
+			    // Create the Tiled Ground
+			 //    var tiledGround = new BABYLON.Mesh.CreateTiledGround("Tiled Ground", xmin, zmin, xmax, zmax, subdivisions, precision, scene);
+			 //    tiledGround.position.y = 0.1;	
+			 //    tiledGround.material = multiMat;
+
+			 //    var verticesCount = tiledGround.getTotalVertices();
+				// var tileIndicesLength = tiledGround.getIndices().length / (subdivisions.w * subdivisions.h);
+
+				// tiledGround.subMeshes = [];
+				// var base = 0;
+				// for (var row = 0; row < subdivisions.h; row++) {
+				//     for (var col = 0; col < subdivisions.w; col++) {
+				//     	if(Math.round(Math.random() * 4) == 0)
+				//          	tiledGround.subMeshes.push(new BABYLON.SubMesh(row%2 ^ col%2, 0, verticesCount, base, tileIndicesLength, tiledGround));
+				//          base += tileIndicesLength;
+				//      }
+				// }
+
+
+				return scene;	
+			}
+
+			var scene = createScene();
+
+			engine.runRenderLoop(function() {					
+				scene.render();
+			});
+
+			window.addEventListener('resize', function() {
+				engine.resize();
+			});
+
+		});
+
+		
+	</script>
+</body>
+</html>
