@@ -5,7 +5,7 @@
 	<title>Babylon - Getting started</title>
 	<script src="js/babylon.js"></script>
 	<script src="js/hand.js"></script>
-	<script src="js/babylon.gridmaterial.js"></script>
+	<script src="js/babylon.gridMaterial.js"></script>
 	<style>
 		html, body {
 			overflow: hidden;
@@ -34,7 +34,7 @@
 			var createScene = function() {
 
 				var scene = new BABYLON.Scene(engine);
-				scene.clearColor = new BABYLON.Color3(0, 1, 0); 
+				scene.clearColor = new BABYLON.Color3(0, 1, 0);
 
 				// var assetsManager = new BABYLON.AssetsManager(scene);
 				// var textureTask = assetsManager.addTextureTask("image task", "assets/BackgroundPlains.png");
@@ -45,11 +45,11 @@
 				//     var height = task.texture.height;
 				//     var bgPlane = BABYLON.MeshBuilder.CreatePlane('bgPlane', {'width' : width / 100, 'height' : height / 100, 'updatable' : true, 'sideOrientation' : BABYLON.Mesh.DEFAULTSIDE}, scene);
 				//     var bgMaterial = new BABYLON.StandardMaterial('bgMaterial', scene);
-				// 	bgMaterial.diffuseTexture = new BABYLON.Texture(task.texture, scene);  
+				// 	bgMaterial.diffuseTexture = new BABYLON.Texture(task.texture, scene);
 				// 	// bgPlane.position.y = task.image.height / 2;
 				// 	// bgPlane.position.z = 50;
 				// }
-				// assetsManager.load();				
+				// assetsManager.load();
 
 				//scene.clearColor = new BABYLON.Color3(0, 1, 0);
 				var light = new BABYLON.PointLight('Omni', new BABYLON.Vector3(0, 100, 100), scene);
@@ -81,7 +81,7 @@
 						player.position.z += 1;
 						player.playAnimation(0, 10, false, 75);
 					}
-					else if (evt.sourceEvent.key == "a") {						
+					else if (evt.sourceEvent.key == "a") {
 						player.position.x -= 1;
 						player.playAnimation(0, 10, false, 75);
 					}
@@ -92,29 +92,29 @@
 				}));
 
 				var bgMaterial = new BABYLON.StandardMaterial('bgMaterial', scene);
-				bgMaterial.emissiveTexture = new BABYLON.Texture("assets/BackgroundPlains.png", scene);  
+				bgMaterial.emissiveTexture = new BABYLON.Texture("assets/BackgroundPlains.png", scene);
 				bgMaterial.emissiveTexture.hasAlpha = true;
 				bgMaterial.useAlphaFromEmissiveTexture;
 				bgMaterial.hasAlpha = true;
 				bgMaterial.backFaceCulling = false;
 				//bgMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
 
-				var bgPlane = BABYLON.MeshBuilder.CreatePlane('bgPlane', {width: 35, height: 8}, scene, true, BABYLON.MeshBuilder.FRONTSIDE);	
+				var bgPlane = BABYLON.MeshBuilder.CreatePlane('bgPlane', {width: 35, height: 8}, scene, true, BABYLON.MeshBuilder.FRONTSIDE);
 				bgPlane.material = bgMaterial;
 				//bgPlane.showBoundingBox = true;
-				var offsetY = bgPlane.height / 2; 
-				bgPlane.position = new BABYLON.Vector3(0, 2.5, 10); 
-				
-				
+				var offsetY = bgPlane.height / 2;
+				bgPlane.position = new BABYLON.Vector3(0, 2.5, 10);
+
+
 				var parameters = {
 					"width" : 20,
-					"height" : 8, 
+					"height" : 8,
 					"updatable" : true,
 					"sideOrientation" : BABYLON.Mesh.DEFAULTSIDE
 				};
-				
-				plane = BABYLON.MeshBuilder.CreatePlane('Grid', parameters, scene);				
-				plane.rotation.x = Math.PI / 2;  
+
+				plane = BABYLON.MeshBuilder.CreatePlane('Grid', parameters, scene);
+				plane.rotation.x = Math.PI / 2;
 
 				var grid = new BABYLON.GridMaterial('gridMaterial', scene)
 				grid.majorUnitFrequency = 0;
@@ -132,10 +132,10 @@
 				// multiMat.subMaterials.push(blackMaterial);
 
 				var grassMaterial1 = new BABYLON.StandardMaterial("Grass1", scene);
-				grassMaterial1.diffuseTexture = new BABYLON.Texture("assets/TilesGrassVariant0_128.png", scene);  
+				grassMaterial1.diffuseTexture = new BABYLON.Texture("assets/TilesGrassVariant0_128.png", scene);
 
 				var grassMaterial2 = new BABYLON.StandardMaterial("Grass2", scene);
-				grassMaterial2.diffuseTexture = new BABYLON.Texture("assets/TilesGrassVariant1_128.png", scene);  
+				grassMaterial2.diffuseTexture = new BABYLON.Texture("assets/TilesGrassVariant1_128.png", scene);
 
 				multiMat.subMaterials.push(grassMaterial1);
 				multiMat.subMaterials.push(grassMaterial2);
@@ -155,7 +155,7 @@
 			    };
 			    // Create the Tiled Ground
 			 //    var tiledGround = new BABYLON.Mesh.CreateTiledGround("Tiled Ground", xmin, zmin, xmax, zmax, subdivisions, precision, scene);
-			 //    tiledGround.position.y = 0.1;	
+			 //    tiledGround.position.y = 0.1;
 			 //    tiledGround.material = multiMat;
 
 			 //    var verticesCount = tiledGround.getTotalVertices();
@@ -172,12 +172,12 @@
 				// }
 
 
-				return scene;	
+				return scene;
 			}
 
 			var scene = createScene();
 
-			engine.runRenderLoop(function() {					
+			engine.runRenderLoop(function() {
 				scene.render();
 			});
 
@@ -187,7 +187,7 @@
 
 		});
 
-		
+
 	</script>
 </body>
 </html>
