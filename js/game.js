@@ -9,46 +9,6 @@ Game = function(canvasId) {
 
 	// Load assets via assets manager.
 	var preloader = new BABYLON.AssetsManager(scene);
-	//var levelassets = new LevelAssetLoader(scene, preloader, "grass");
-	
-	// function loadLevelAssets(levelId) {
-	// //console.log('hi');
-	// 	var tiles = [];
-	// 	var debris = [];
-
-	// 	var assets = {
-	// 			tiles,
-	// 			debris  
-	// 	};
-
-	// 	var count = 0;
-	// 	var condition = true;
-	// 	while(condition) {
-	// 		//console.log('in the loop');
-	// 		assets.tiles.push(new BABYLON.StandardMaterial(levelId + 'Material' + count, scene)); 		
-	// 		console.log(assets.tiles[count]);
-	// 		var textureTask = preloader.addTextureTask("texture task" + count, "assets/tiles/TilesGrassVariant" + count + "_128.png");
-	// 		textureTask.onError = function(task) {
-	// 			task.log();
-	// 			console.log('Couldnt load texture!');
-	// 			condition = false;
-	// 		}	
-	// 		textureTask.onSuccess = function(task) {
-	// 			console.log('success!');
-	// 			console.log(assets.tiles[count]);
-	// 			assets.tiles[count].emissiveTexture = task.texture;	
-
-	// 		}  
-			
-	// 		count++;
-	// 		if(count > 4)
-	// 			condition = false;
-	// 	}	
-	// 	return assets;
-	// }
-
-	// var assets = loadLevelAssets('grass');
-
 	
 	var windowWidth = canvas.width;
 	var windowHeight = canvas.height;
@@ -89,199 +49,52 @@ Game = function(canvasId) {
 	// Idle sprite animation.
 	player.playAnimation(0, 2, true, 400);
 
-	// Cursor controls.
-	/* TODO: Implement mouse controls. */
-	var isAnimatable = true; 
-	scene.actionManager = new BABYLON.ActionManager(scene);
-	scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, function (evt) {
-		if (evt.sourceEvent.key == "d") {
-			if (isAnimatable) {
-				isAnimatable = false;
-				player.invertU = false;						
-
-				var animationPlayer = new BABYLON.Animation("playerAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT); 
-
-				var nextPos = player.position.add(new BABYLON.Vector3(2, 0, 0));
-
-				var keysPlayer = [];
-				keysPlayer.push({ frame: 0, value: player.position });
-				keysPlayer.push({ frame: 60, value: nextPos });
-				animationPlayer.setKeys(keysPlayer);
-
-				var easingFunction = new BABYLON.SineEase();
-				easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-				animationPlayer.setEasingFunction(easingFunction);
-				player.animations.push(animationPlayer);
-				player.playAnimation(4, 7, true, 100);	
-				scene.beginAnimation(player, 0, 60, false, 1.5, function() {
-					isAnimatable = true;
-					player.playAnimation(0, 2, true, 400);
-					//var worldMatrix = player.getWorldMatrix();
-					var transformMatrix = scene.getTransformMatrix();					
-					var viewport = scene.activeCamera.viewport;
-					var coordinates = BABYLON.Vector3.Project(player.position, BABYLON.Matrix.Identity(), transformMatrix, viewport);
-					
-					// Check if the player is near the right of the screen.
-					// If so, move the camera to the right.
-					if (coordinates.x > 0.8) {
-						isAnimatable = false;
-						var animationCamera = new BABYLON.Animation("cameraAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
-						var nextPos = camera.position.add(new BABYLON.Vector3(10, 0, 0));
-
-						var keysCamera = [];
-						keysCamera.push( { frame: 0, value: camera.position });
-						keysCamera.push( { frame: 60, value: nextPos });
-						animationCamera.setKeys(keysCamera);
-
-						animationCamera.setEasingFunction(easingFunction);
-						camera.animations.push(animationCamera);
-						scene.beginAnimation(camera, 0, 60, false, 1.0, function() {
-							isAnimatable = true;
-						});
-					}
-				});	
-			}				
-		}
-		else if (evt.sourceEvent.key == "w") {
-			if (isAnimatable) {
-				isAnimatable = false; 
-				player.invertU = false;
-				
-				var animationPlayer = new BABYLON.Animation("playerAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT); 
-				
-				var nextPos = player.position.add(new BABYLON.Vector3(0, 0, 2));
-
-				var keysPlayer = [];
-				keysPlayer.push({ frame: 0, value: player.position });
-				keysPlayer.push({ frame: 60, value: nextPos });
-				animationPlayer.setKeys(keysPlayer);
-
-				var easingFunction = new BABYLON.CircleEase();
-				easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-				animationPlayer.setEasingFunction(easingFunction);
-				player.animations.push(animationPlayer);
-				player.playAnimation(4, 7, true, 100);	
-				scene.beginAnimation(player, 0, 60, false, 1.5, function() {
-					isAnimatable = true;
-					player.playAnimation(0, 2, true, 400);
-				});	
-			}						
-		}
-		else if (evt.sourceEvent.key == "a") {	
-			if (isAnimatable) {
-				isAnimatable = false;
-				player.invertU = true;					
-
-				var animationPlayer = new BABYLON.Animation("playerAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT); 
-				
-				var nextPos = player.position.add(new BABYLON.Vector3(-2, 0, 0));
-
-				var keysPlayer = [];
-				keysPlayer.push({ frame: 0, value: player.position });
-				keysPlayer.push({ frame: 60, value: nextPos });
-				animationPlayer.setKeys(keysPlayer);
-
-				var easingFunction = new BABYLON.CircleEase();
-				easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-				animationPlayer.setEasingFunction(easingFunction);
-				player.animations.push(animationPlayer);
-				player.playAnimation(4, 7, true, 100);	
-				scene.beginAnimation(player, 0, 60, false, 1.5, function() {
-					isAnimatable = true;
-					player.playAnimation(0, 2, true, 400);
-				});						
-			}				
-		}
-		else if (evt.sourceEvent.key == "s") {
-			if (isAnimatable) {
-				isAnimatable = false; 
-				player.invertU = false;
-				
-				var animationPlayer = new BABYLON.Animation("playerAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT); 
-				
-				var nextPos = player.position.add(new BABYLON.Vector3(0, 0, -2));
-
-				var keysPlayer = [];
-				keysPlayer.push({ frame: 0, value: player.position });
-				keysPlayer.push({ frame: 60, value: nextPos });
-				animationPlayer.setKeys(keysPlayer);
-
-				var easingFunction = new BABYLON.CircleEase();
-				easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-				animationPlayer.setEasingFunction(easingFunction);
-				player.animations.push(animationPlayer);
-				player.playAnimation(4, 7, true, 100);	
-				scene.beginAnimation(player, 0, 60, false, 1.5, function() {
-					isAnimatable = true;
-					player.playAnimation(0, 2, true, 400);
-				});	
-			}
-		}
-	}));			
-
-		
+			
 	// Load different textures.
-	// *TO DO*: Implement Assets-manager.
+	var groundMaterials = [];	
 	var textureTask;
-	var grassMaterial1 = new BABYLON.StandardMaterial("Grass1", scene);	
-	textureTask = preloader.addTextureTask("image task", "assets/tiles/TilesGrassVariant0_128.png");
+	var groundMaterial0 = new BABYLON.StandardMaterial("Grass0", scene);	
+	textureTask = preloader.addTextureTask("image task", "assets/tiles/plains/TilesGrassVariant0_128.png");
 	textureTask.onSuccess = function(task) {
-		grassMaterial1.emissiveTexture = task.texture;
-		// var tile_type_0 = BABYLON.Mesh.CreatePlane("tile_type_0", 2, scene);
-		// tile_type_0.material = grassMaterial1;
-		// tile_type_0.visibility = false;
-		// assets.push(tile_type_0);
-		// console.log(assets);
+		groundMaterial0.emissiveTexture = task.texture;		
+		groundMaterials.push(groundMaterial0);
 	}  	
 	
-	var grassMaterial2 = new BABYLON.StandardMaterial("Grass2", scene);
-	textureTask = preloader.addTextureTask("image task", "assets/tiles/TilesGrassVariant1_128.png");
+	var groundMaterial1 = new BABYLON.StandardMaterial("Grass1", scene);
+	textureTask = preloader.addTextureTask("image task", "assets/tiles/plains/TilesGrassVariant1_128.png");
 	textureTask.onSuccess = function(task) {
-		grassMaterial2.emissiveTexture = task.texture;
-		// var tile_type_1 = BABYLON.Mesh.CreatePlane("tile_type_1", 2, scene);
-		// tile_type_1.material = grassMaterial2;
-		// tile_type_1.visibility = false;
-		// assets.push(tile_type_1);
+		groundMaterial1.emissiveTexture = task.texture;	
+		groundMaterials.push(groundMaterial1);	
 	}  
 	
-	var grassMaterial3 = new BABYLON.StandardMaterial("Grass3", scene);
-	textureTask = preloader.addTextureTask("image task", "assets/tiles/TilesGrassVariant2_128.png");
+	var groundMaterial2 = new BABYLON.StandardMaterial("Grass2", scene);
+	textureTask = preloader.addTextureTask("image task", "assets/tiles/plains/TilesGrassVariant2_128.png");
 	textureTask.onSuccess = function(task) {
-		grassMaterial3.emissiveTexture = task.texture;
-		// var tile_type_2 = BABYLON.Mesh.CreatePlane("tile_type_2", 2, scene);
-		// tile_type_2.material = grassMaterial3;
-		// tile_type_2.visibility = false;
-		// assets.push(tile_type_2);
+		groundMaterial2.emissiveTexture = task.texture;		
+		groundMaterials.push(groundMaterial2);
 	}  	
 
-	var grassMaterial4 = new BABYLON.StandardMaterial("Grass4", scene);
-	textureTask = preloader.addTextureTask("image task", "assets/tiles/TilesGrassVariant3_128.png");
+	var groundMaterial3 = new BABYLON.StandardMaterial("Grass3", scene);
+	textureTask = preloader.addTextureTask("image task", "assets/tiles/plains/TilesGrassVariant3_128.png");
 	textureTask.onSuccess = function(task) {
-		grassMaterial4.emissiveTexture = task.texture;
-		// var tile_type_3 = BABYLON.Mesh.CreatePlane("tile_type_3", 2, scene);
-		// tile_type_3.material = grassMaterial4;
-		// tile_type_3.visibility = false;
-		// assets.push(tile_type_3);
+		groundMaterial3.emissiveTexture = task.texture;
+		groundMaterials.push(groundMaterial3);		
 	}  	
 	
-	var grassMaterial5 = new BABYLON.StandardMaterial("Grass5", scene);
-	textureTask = preloader.addTextureTask("image task", "assets/tiles/TilesGrassVariant4_128.png");
+	var groundMaterial4 = new BABYLON.StandardMaterial("Grass4", scene);
+	textureTask = preloader.addTextureTask("image task", "assets/tiles/plains/TilesGrassVariant4_128.png");
 	textureTask.onSuccess = function(task) {
-		grassMaterial5.emissiveTexture = task.texture;
-		// var tile_type_4 = BABYLON.Mesh.CreatePlane("tile_type_4", 2, scene);
-		// tile_type_4.material = grassMaterial5;
-		// tile_type_4.visibility = false;
-		// assets.push(tile_type_4);
+		groundMaterial4.emissiveTexture = task.texture;		
+		groundMaterials.push(groundMaterial4);
 	}  
 
-
-
+	var groundMaterial5 = new BABYLON.StandardMaterial("Grass5", scene);
+	groundMaterials.push(groundMaterial5);
 
 	var gridMaterial = new BABYLON.GridMaterial('gridMaterial', scene)
 	gridMaterial.majorUnitFrequency = 0;			
 	gridMaterial.gridRatio = 2;
 	gridMaterial.opacity = 0.9;			
-
 
 	var parameters = {
 		"width" : 40,
@@ -307,19 +120,25 @@ Game = function(canvasId) {
 	anchorBox.visibility = false;
 	//anchorBox.rotation.x = Math.PI / 2;
 			
+	
+	// Cursor controls.	
+	var isAnimatable = true; 
+	scene.actionManager = new BABYLON.ActionManager(scene);	
+
 	// Iterate through rows and columns.
-	for (var x = 0 + tileSize / 2; x < gridWidth; x += tileSize) {					
-		for (var z = 0 + tileSize / 2; z < gridHeight; z += tileSize) {
+	var tiles = [];
+	for (var x = 0 + tileSize / 2; x < gridWidth ; x += tileSize) {					
+		for (var z = 0 + tileSize / 2; z < gridHeight; z += tileSize){
 
 			var tile = BABYLON.Mesh.CreatePlane('tile_' + x + '_' + z, tileSize, scene);
 			//console.log(assets);
 			//var tile = assets[0].createInstance("i" + x);
-			tile.position = new BABYLON.Vector3(x , 0, z);
+			tile.position = new BABYLON.Vector3(x, 0, z);
 			tile.rotation.x = Math.PI / 2;
 			
 			tile.actionManager = new BABYLON.ActionManager(scene);
-			var action = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOverTrigger, tile, "visibility", 0.2, 500);
-			var action2 = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOutTrigger, tile, "visibility", 1.0, 300);						
+			var action = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOverTrigger, tile, "visibility", 0.5, 200);
+			var action2 = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOutTrigger, tile, "visibility", 1.0, 200);						
 
 			var action3 = new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnLeftPickTrigger, function(event) {
 
@@ -336,14 +155,15 @@ Game = function(canvasId) {
 					else
 						player.invertU = false;
 					var distance = BABYLON.Vector3.DistanceSquared(player.position, nextPos);
-					console.log(distance);
+					//console.log(distance);
+					console.log(nextPos);
 
 					var keysPlayer = [];
 					var finalFrame = 60 + distance / 2;
 					keysPlayer.push({ frame: 0, value: player.position });
 					keysPlayer.push({ frame: finalFrame, value: nextPos });
 					animationPlayer.setKeys(keysPlayer);
-					console.log(keysPlayer);
+					//console.log(keysPlayer);
 
 					var easingFunction = new BABYLON.SineEase();
 					easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
@@ -353,7 +173,7 @@ Game = function(canvasId) {
 					player.playAnimation(4, 7, true, 100);	
 
 					scene.beginAnimation(player, 0, finalFrame, false, 1.5, function() {
-						//console.log(player.position);
+						console.log(player.position);
 						//player.invertU = false;
 						isAnimatable = true;
 						player.playAnimation(0, 2, true, 400);
@@ -363,7 +183,11 @@ Game = function(canvasId) {
 						var viewport = scene.activeCamera.viewport;
 						var coordinates = BABYLON.Vector3.Project(player.position, BABYLON.Matrix.Identity(), transformMatrix, viewport);					
 
-						if (coordinates.x > 0.8) {
+						if (player.position.x == 39) {
+							reloadScene('mountains');
+						}
+
+						else if (coordinates.x > 0.8) {
 							isAnimatable = false;
 							var animationCamera = new BABYLON.Animation("cameraAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
 							var nextPos = camera.position.add(new BABYLON.Vector3(10, 0, 0));
@@ -379,38 +203,46 @@ Game = function(canvasId) {
 								isAnimatable = true;
 							});
 						}
+
+						
 					});				
 				}				
 			});
+			var actions = [action, action3];
+			var actionsCombined = new BABYLON.CombineAction(BABYLON.ActionManager.OnLeftPickTrigger, actions);
 
 			tile.actionManager.registerAction(action);
 			tile.actionManager.registerAction(action2);
 			tile.actionManager.registerAction(action3);
+			//tile.actionManager.registerAction(actionsCombined);
 
 			//Distribute tile textures randomly.
 			var randomNumber = Math.floor(Math.random() * 5);
 			if (randomNumber == 0) 
-				tile.material = grassMaterial1;						
+				tile.material = groundMaterial0;						
 			else if (randomNumber == 1) 
-				tile.material = grassMaterial2;						
+				tile.material = groundMaterial1;						
 			else if (randomNumber == 2) 
-				tile.material = grassMaterial3;
+				tile.material = groundMaterial2;
 			else if( randomNumber == 3)
-				tile.material = grassMaterial4;
+				tile.material = groundMaterial3;
 			else
-				tile.material = grassMaterial5;						
+				tile.material = groundMaterial4;						
 			
 			// Make box a parent.
 			tile.parent = anchorBox;
 			//console.log(tile.id);
-			
+			tiles.push(tile);
+			if(x ==  0+ tileSize / 2 && z == 0 + tileSize / 2)
+				console.log(tile.material);
 		}
 	}
 	
+	console.log(tiles.length);
 
 	// Texture for background plane.
 	var bgMaterial = new BABYLON.StandardMaterial('bgMaterial', scene);
-	textureTask = preloader.addTextureTask("image task", "assets/background/BackgroundPlains.png");
+	textureTask = preloader.addTextureTask("image task", "assets/background/plains/BackgroundPlains.png");
 	textureTask.onSuccess = function (task) {
 		bgMaterial.emissiveTexture = task.texture;
 		bgMaterial.opacityTexture = bgMaterial.emissiveTexture;	
@@ -429,7 +261,7 @@ Game = function(canvasId) {
 	bgPlane.rotation.x = cameraAngle;
 
 	var bgMaterialSmall = new BABYLON.StandardMaterial('bgMaterialSmall', scene);
-	textureTask = preloader.addTextureTask("image task", "assets/background/BackgroundPlainsFrontVariant1.png");
+	textureTask = preloader.addTextureTask("image task", "assets/background/plains/BackgroundPlainsFrontVariant1.png");
 	textureTask.onSuccess = function (task) {
 		bgMaterialSmall.emissiveTexture = task.texture;
 		bgMaterialSmall.opacityTexture = bgMaterialSmall.emissiveTexture;	
@@ -440,7 +272,7 @@ Game = function(canvasId) {
 	}		
 
 	var bgMaterialSmall2 = new BABYLON.StandardMaterial('bgMaterialSmall2', scene);
-	textureTask = preloader.addTextureTask("image task", "assets/background/BackgroundPlainsFrontVariant2.png");
+	textureTask = preloader.addTextureTask("image task", "assets/background/plains/BackgroundPlainsFrontVariant2.png");
 	textureTask.onSuccess = function (task) {
 		bgMaterialSmall2.emissiveTexture = task.texture;
 		bgMaterialSmall2.opacityTexture = bgMaterialSmall2.emissiveTexture;	
@@ -482,6 +314,137 @@ Game = function(canvasId) {
 	window.addEventListener('resize', function() {
 		engine.resize();
 	});
+
+	function reloadScene(level) {
+
+		camera.position.y = 14;
+		camera.position.z = -9;
+		camera.position.x = 16;		
+
+		player.position.y = 1;
+		player.position.x = 9;
+		player.position.z = 5;
+		player.cellIndex = 0;
+		// Idle sprite animation.	
+		player.stopAnimation();	
+		player.playAnimation(0, 2, true, 400);
+
+		if(level == 'mountains') {
+			scene.clearColor = new BABYLON.Color3(93 / 255, 93 / 255, 93 / 255);
+
+			textureTask = preloader.addTextureTask('image task', "assets/background/mountains/BackgroundMointainsVariantFrontVariant0.png");
+			textureTask.onSuccess = function (task) {
+				bgMaterial.emissiveTexture.dispose();
+				bgMaterial.emissiveTexture = task.texture;
+				bgMaterial.opacityTexture = bgMaterial.emissiveTexture;	
+				bgMaterial.hasAlpha = true;
+				bgMaterial.emissiveTexture.hasAlpha = true;				
+				bgMaterial.useAlphaFromEmissiveTexture;		
+				bgMaterial.emissiveTexture.uScale = 2.0;	
+			}
+
+			textureTask = preloader.addTextureTask("image task", "assets/background/mountains/BackgroundMointainsVariantFrontVariant1.png");
+			textureTask.onSuccess = function (task) {
+				bgMaterialSmall.emissiveTexture.dispose();
+				bgMaterialSmall.emissiveTexture = task.texture;
+				bgMaterialSmall.opacityTexture = bgMaterialSmall.emissiveTexture;	
+				bgMaterialSmall.hasAlpha = true;
+				bgMaterialSmall.emissiveTexture.hasAlpha = true;				
+				bgMaterialSmall.useAlphaFromEmissiveTexture;		
+				bgMaterialSmall.emissiveTexture.uScale = 2.0;	
+			}		
+			
+			textureTask = preloader.addTextureTask("image task", "assets/background/mountains/BackgroundMointainsVariantFrontVariant2.png");
+			textureTask.onSuccess = function (task) {
+				bgMaterialSmall2.emissiveTexture.dispose();
+				bgMaterialSmall2.emissiveTexture = task.texture;
+				bgMaterialSmall2.opacityTexture = bgMaterialSmall2.emissiveTexture;	
+				bgMaterialSmall2.hasAlpha = true;
+				bgMaterialSmall2.emissiveTexture.hasAlpha = true;				
+				bgMaterialSmall2.useAlphaFromEmissiveTexture;		
+				bgMaterialSmall2.emissiveTexture.uScale = 2.0;	 
+
+				bgPlaneSmall.setEnabled(false);
+			}		
+
+			// for(var i = 0; i <= 5; i++) {
+			// 	textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround" + i + ".png");
+			// 	textureTask.onSuccess = function (task) {
+			// 		groundMaterials[i].emissiveTexture.dispose();
+			// 		groundMaterials[i].emissiveTexture = task.texture;
+			// 	}
+			// }
+
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround0.png");
+			textureTask.onSuccess = function (task) {
+				groundMaterial0.emissiveTexture.dispose(); 
+				groundMaterial0.emissiveTexture = task.texture;
+				// groundMaterials[0].emissiveTexture.dispose(); 
+				// groundMaterials[0].emissiveTexture = task.texture;
+			}
+
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround1.png");
+			textureTask.onSuccess = function (task) {
+				groundMaterial1.emissiveTexture.dispose(); 
+				groundMaterial1.emissiveTexture = task.texture;
+				// groundMaterials[1].emissiveTexture.dispose(); 
+				// groundMaterials[1].emissiveTexture = task.texture;
+			}
+
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround2.png");
+			textureTask.onSuccess = function (task) {
+				groundMaterial2.emissiveTexture.dispose(); 
+				groundMaterial2.emissiveTexture = task.texture;
+				// groundMaterials[2].emissiveTexture.dispose(); 
+				// groundMaterials[2].emissiveTexture = task.texture;
+			}
+
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround3.png");
+			textureTask.onSuccess = function (task) {
+				groundMaterial3.emissiveTexture.dispose(); 
+				groundMaterial3.emissiveTexture = task.texture;
+				// groundMaterials[3].emissiveTexture.dispose(); 
+				// groundMaterials[3].emissiveTexture = task.texture;
+			}
+
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround4.png");
+			textureTask.onSuccess = function (task) {
+				groundMaterial4.emissiveTexture.dispose(); 
+				groundMaterial4.emissiveTexture = task.texture;
+				// groundMaterials[4].emissiveTexture.dispose(); 
+				// groundMaterials[4].emissiveTexture = task.texture;
+			}
+
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround5.png");
+			textureTask.onSuccess = function (task) {
+				//groundMaterial5.emissiveTexture.dispose(); 
+				groundMaterial5.emissiveTexture = task.texture;
+				//groundMaterials[5].emissiveTexture.dispose(); 
+				// groundMaterials[5].emissiveTexture = task.texture;
+			}
+
+			for(var j = 0; j < tiles.length; j++) {
+
+				
+
+				var randomNumber = Math.floor(Math.random() * 6);
+				if (randomNumber == 0) 
+					tiles[j].material = groundMaterial0;						
+				else if (randomNumber == 1) 
+					tiles[j].material = groundMaterial1;						
+				else if (randomNumber == 2) 
+					tiles[j].material = groundMaterial2;
+				else if (randomNumber == 3)
+					tiles[j].material = groundMaterial3;
+				else if (randomNumber == 4)
+					tiles[j].material = groundMaterial4;	
+				else
+					tiles[j].material = groundMaterial5;
+			}
+
+		}
+		preloader.load();
+	}
 
 };
 
