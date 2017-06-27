@@ -1,11 +1,11 @@
 Game = function(canvasId) {
 
-	var canvas = document.getElementById('renderCanvas');
+	var canvas = document.getElementById('renderCanvas');	
 
 	var engine = new BABYLON.Engine(canvas, true);
 
 	var scene = new BABYLON.Scene(engine);
-	scene.clearColor = new BABYLON.Color3(74 / 255, 249 / 255, 68 / 255); 		
+	scene.clearColor = new BABYLON.Color3(74 / 255, 249 / 255, 68 / 255); 	
 
 	// Load assets via assets manager.
 	var preloader = new BABYLON.AssetsManager(scene);
@@ -25,12 +25,12 @@ Game = function(canvasId) {
 	camera.position.x = 16;		
 	var targetVec = new BABYLON.Vector3(16, 1, 7);					
 	//camera.setTarget(targetVec);
-	console.log(camera.rotation.x);
+	
 	camera.rotation.x = 0.61;
-	console.log(camera.rotation.x);
+	
 	camera.attachControl(canvas, false);
 	camera.fov = 0.8;
-	console.log(camera.fov);
+	
 
 	// Store camera alpha angle that will be applied to background image plane.
 	var cameraAngle = camera.rotation.x;
@@ -38,23 +38,22 @@ Game = function(canvasId) {
 	//console.log(camera);
 
 
-	// Sprite player unit.
-	var spriteManagerPlayer = new BABYLON.SpriteManager('playerManager', 'assets/characters/cProtagonist.png', 8, 512, scene);
+	// Sprite player manager.
+	var spriteManagerPlayer = new BABYLON.SpriteManager('playerManager', 'assets/characters/cProtagonist.png', 1, 512, scene);
 	var player = new BABYLON.Sprite('player', spriteManagerPlayer);
 	player.size = 2.5;		
 	player.position.y = 1;
 	player.position.x = 9;
 	player.position.z = 5;
 	player.cellIndex = 0;
+	player.health = 100;
+	console.log(player.position.x + 3);
 	// Idle sprite animation.
 	player.playAnimation(0, 2, true, 400);
 
-	var spriteManagerEnemy = new BABYLON.SpriteManager('enemyManager', 'assets/characters/cEnemyDummy.png', 1, 71, scene);
-	
-	// enemyDummy.position.y = 1; 
-	// enemyDummy.position.x = 15; 
-	// enemyDummy.position.z = 5;
-
+	// Sprite enemy manager.
+	var spriteManagerEnemy = new BABYLON.SpriteManager('enemyManager', 'assets/characters/cWergreis.png', 3, 512, scene);	
+	var enemies = [];
 			
 	// Load different textures.
 	var groundMaterials = [];	
@@ -120,11 +119,9 @@ Game = function(canvasId) {
 		"right" : gridWidth, 
 		"front" : 0,
 		"back" : gridHeight
-	};	
+	};			
 
-	var enemy = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back);
-	console.log(enemy);
-
+	emitParticles(player);
 	/* This box is needed to "group" the different tiles,
 		 so that we can move them all at once (rotation later, e.g.).
 		 Since we don't want to exactly merge the meshes 
@@ -143,7 +140,122 @@ Game = function(canvasId) {
 	// Turn controls.
 	var playerTurn = true;
 	var enemyTurn = false;
-	var turn = 1;
+	var turnNumber = 1;
+	var battleMode = false;
+	var abilityUsed;
+	var currentPositions = new Map();
+	currentPositions.set("player", player.position);
+	
+	for(var value of currentPositions.values()) {
+		console.log(value);
+	}
+
+	// Spawn enemies.
+	var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'ranged1', 'ranged');	
+	var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'ranged2', 'ranged');	
+	var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'ranged3', 'ranged');		
+	var currentEnemy = enemies.length - 1;
+
+	// 2D canvas that is used to display various ingame info.
+	var canvas2D = new BABYLON.ScreenSpaceCanvas2D(scene, {
+        id: "ScreenCanvas",
+        size: new BABYLON.Size(canvas.width, canvas.height),
+        cachingStrategy: BABYLON.Canvas2D.CACHESTRATEGY_DONTCACHE        
+    });
+    
+    // Add frame for the current turn.
+    var turnFrame = new BABYLON.Rectangle2D({
+    	id: "rectTopLeft", parent: canvas2D, width: 200, height: 100, x: 0, y: canvas2D.height - 100,
+    	fill: "#4040408F", border: "#A040A0D0, #FFFFFF", borderThickness: 5,
+    	roundRadius: 10, isVisible: true,
+    	children: 
+    	[
+    		new BABYLON.Text2D("Current Turn:", { id: "turnTextTitle", fontName: "20pt Arial", marginAlignment: "h: center, v: top" }),
+    		new BABYLON.Text2D(turnNumber.toString(), { id: "turnNumber", fontName: "25pt Arial", marginAlignment: "h: center, v: bottom", marginBottom: 15})
+    	] 
+    });
+
+    // Frame for hit poitns display.
+    var hpFrame = new BABYLON.Rectangle2D({
+    	id: "rectTopRight", parent: canvas2D, width: 300, height: 200, x: canvas2D.width - 300, y: canvas2D.height - 250,
+    	fill: "#4040408F", border: "#A040A0D0, #FFFFFF", borderThickness: 5,
+    	roundRadius: 10, isVisible: true,
+    	children:
+    	[
+    	new BABYLON.Text2D("Hit Points", { id: "hpTitle", fontName: "20pt Arial", marginAlignment: "h: center, v:top" }),
+    	new BABYLON.Text2D("Player:", { id: "playerHpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 30, marginLeft: 5}),
+    	new BABYLON.Text2D(player.health.toString(), { id: "playerHp", fontName: "20pt Arial", marginAlignment: "h: right, v: top", marginTop: 30, marginRight: 5}),
+    	new BABYLON.Text2D("Enemy_1:", { id: "enemy_1HpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 60, marginLeft: 5}),
+    	new BABYLON.Text2D(enemy1.health.toString(), { id: "enemy_1Hp", fontName: "20pt Arial", marginAlignment: "h: right, v: top", marginTop: 60, marginRight: 5}),
+    	new BABYLON.Text2D("Enemy_2:", { id: "enemy_2HpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 90, marginLeft: 5}),
+    	new BABYLON.Text2D(enemy2.health.toString(), { id: "enemy_2Hp", fontName: "20pt Arial", marginAlignment: "h:right, v: top", marginTop: 90, marginRight: 5}),
+    	new BABYLON.Text2D("Enemy_3:", { id: "enemy_3HpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 120, marginLeft: 5}),
+    	new BABYLON.Text2D(enemy3.health.toString(), { id: "enemy_3Hp", fontName: "20pt Arial", marginAlignment: "h: right, v: top", marginTop: 120, marginRight: 5}),
+    	]
+    });
+
+    var abilityName;
+    // Adda skill info bar at the top of the screen.
+    var skillInfoBar = new BABYLON.Rectangle2D({
+    	id: "skillInfoBar", parent: canvas2D, width: 600, height: 80, x: canvas.width / 2 - 300, y: canvas2D.height - 80,
+    	fill: "#4040408F", border: "#A040A0D0, #FFFFFF", borderThickness: 5,
+    	roundRadius: 10, isVisible: false,
+    	children:
+    	[
+    		new BABYLON.Text2D("Player has used the ability " + abilityName, { id: "skillInfo", fontName: "20pt Arial", marginAlignment: "h: center, v: center"})
+    		//new BABYLON.Text2D(abilityUsed, { id: "abilityUsed", fontName: "20pt Arial", marginAlignment: "h: right, v: center"})
+    	]
+    });
+
+    // Add an ability-frame. 
+    var skillsFrame = new BABYLON.Rectangle2D({
+    	id: "rectBottom", parent: canvas2D, width: 500, height: 300, x: 0, y: canvas2D.height - 450,
+    	fill: "#4040408F", border: "#A040A0D0, #FFFFFF", borderThickness: 5,
+    	roundRadius: 10, isVisible: true    	
+    });
+    
+    // Add content to the frame.
+    var skillsTitle = new BABYLON.Text2D("Abilities:", {parent: skillsFrame, id: "skillsTextTitle", fontName: "22pt Arial", marginAlignment: "h: center, v: top" });
+    var skill_1 = new BABYLON.Text2D("Skill_1", {parent: skillsFrame, id: "attack_1", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 50, marginLeft: 10});
+    var skill_2 = new BABYLON.Text2D("Skill_2", {parent: skillsFrame, id: "attack_2", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 90, marginLeft: 10});
+    var skill_3 = new BABYLON.Text2D("Skill_3", {parent: skillsFrame, id: "attack_3", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 130, marginLeft: 10});
+    var skill_4 = new BABYLON.Text2D("Skill_4", {parent: skillsFrame, id: "attack_4", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 170, marginLeft: 10});
+
+    // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
+    skill_1.pointerEventObservable.add(function() {
+    	telegraphTiles(tileSize, player, 1);    	
+    }, BABYLON.PrimitivePointerInfo.PointerOver); 
+
+    // Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
+    skill_1.pointerEventObservable.add(function() {    	
+    	tiles.forEach(function(tile) {
+    		var animatable = scene.getAnimatableByTarget(tile);    		
+    		if(animatable != null) {    			
+    			tile.visibility = 1.0;    			
+    			animatable.stop();    			  		
+    		}
+    	});
+    }, BABYLON.PrimitivePointerInfo.PointerLeave);
+
+    // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
+    skill_2.pointerEventObservable.add(function() {
+    	telegraphTiles(tileSize * 3, player, 2);    	
+    }, BABYLON.PrimitivePointerInfo.PointerOver);
+
+	// Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
+    skill_2.pointerEventObservable.add(function() {    	
+    	tiles.forEach(function(tile) {
+    		var animatable = scene.getAnimatableByTarget(tile);    		
+    		if(animatable != null) {    			
+    			tile.visibility = 1.0;    			
+    			animatable.stop();    			  		
+    		}
+    	});
+    }, BABYLON.PrimitivePointerInfo.PointerLeave);
+
+    skill_2.pointerEventObservable.add(function() {    	
+    	useAbility(player, 'skill_2');
+    }, BABYLON.PrimitivePointerInfo.PointerUp);
 
 	// Iterate through rows and columns.
 	var tiles = [];
@@ -158,11 +270,10 @@ Game = function(canvasId) {
 			
 			tile.actionManager = new BABYLON.ActionManager(scene);
 			var action = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOverTrigger, tile, "visibility", 0.5, 200);
-			var action2 = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOutTrigger, tile, "visibility", 1.0, 200);						
-
+			var action2 = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOutTrigger, tile, "visibility", 1.0, 200);		
 			var action3 = new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnLeftPickTrigger, function(event) {
 
-				if(isAnimatable && playerTurn) {					
+				if(isAnimatable && playerTurn && !battleMode) {					
 					isAnimatable = false;
 					playerTurn = false;
 
@@ -192,6 +303,8 @@ Game = function(canvasId) {
 
 					scene.beginAnimation(player, 0, finalFrame, false, 1.5, function() {
 						
+						currentPositions.set("player", player.position);
+						console.log(currentPositions.get("player"));
 						isAnimatable = true;
 						player.playAnimation(0, 2, true, 400);
 
@@ -221,20 +334,24 @@ Game = function(canvasId) {
 							});
 						}
 
-						moveEnemy(boundaries, enemy);
-						turn++;						
+						//enemyAction(enemies[currentEnemy]);
+						moveEnemy(boundaries, enemies[currentEnemy]);	
+						// if(isAnimatable) {
+						// 	moveEnemy(boundaries, enemy2);	
+						// }
+						
+						turnNumber++;	
+						turnFrame.children[1].text = turnNumber.toString();												
 					});				
 				}				
-			});
-			var actions = [action, action3];
-			var actionsCombined = new BABYLON.CombineAction(BABYLON.ActionManager.OnLeftPickTrigger, actions);
+			});			
 
+			// Add the actions to each tile.
 			tile.actionManager.registerAction(action);
 			tile.actionManager.registerAction(action2);
-			tile.actionManager.registerAction(action3);
-			//tile.actionManager.registerAction(actionsCombined);
+			tile.actionManager.registerAction(action3);			
 
-			//Distribute tile textures randomly.
+			// Distribute tile textures randomly.
 			var randomNumber = Math.floor(Math.random() * 5);
 			if (randomNumber == 0) 
 				tile.material = groundMaterial0;						
@@ -249,12 +366,12 @@ Game = function(canvasId) {
 			
 			// Make box a parent.
 			tile.parent = anchorBox;
-			//console.log(tile.id);
-			tiles.push(tile);
-			if(x ==  0+ tileSize / 2 && z == 0 + tileSize / 2)
-				console.log(tile.material);
+			
+			// Add tile to tiles array.
+			tiles.push(tile);			
 		}
 	}	
+	
 
 	// Two random U-offset to get a randomized touch on the background placements. 
 	var randomUOffset1 = Math.random();
@@ -269,16 +386,17 @@ Game = function(canvasId) {
 		skyMaterial.emissiveTexture.uScale = 2.0;	
 	}	
 
-
 	// Texture for background plane.
 	var bgMaterial = new BABYLON.StandardMaterial('bgMaterial', scene);
 	textureTask = preloader.addTextureTask("image task", "assets/levels/grasslands/backgrounds/front/1.png");
 	textureTask.onSuccess = function (task) {
 		bgMaterial.emissiveTexture = task.texture;
 		bgMaterial.opacityTexture = bgMaterial.emissiveTexture;	
-		bgMaterial.hasAlpha = true;
+		//bgMaterial.hasAlpha = true;
+		//bgMaterial.alpha = 1.0; 
 		bgMaterial.emissiveTexture.hasAlpha = true;				
-		bgMaterial.useAlphaFromEmissiveTexture;		
+		bgMaterial.useAlphaFromEmissiveTexture = true;		
+		//bgMaterial.emissiveTexture.getAlphaFromRGB = true;
 		bgMaterial.emissiveTexture.uScale = 2.0;	
 		bgMaterial.emissiveTexture.uOffset = randomUOffset1;	
 	}			
@@ -338,7 +456,12 @@ Game = function(canvasId) {
 //	showAxis(10);
 	//scene.debugLayer.show();
  
-	
+	scene.registerBeforeRender(function() {
+		if(battleMode) {
+
+			skillsFrame.levelVisible = true;
+		}
+	});
 	
 	preloader.onFinish = function (tasks) {
 		engine.runRenderLoop(function() {		
@@ -485,35 +608,150 @@ Game = function(canvasId) {
 		preloader.load();
 	}
 
-	function spawnEnemy(minX, maxX, minZ, maxZ) {
+	function spawnEnemy(minX, maxX, minZ, maxZ, id, enemyType) {
 
-		var enemyDummy = new BABYLON.Sprite('enemy', spriteManagerEnemy);
+		//var hitPoints, id, marks;
+		//var cooldowns;
+
+		var enemyDummy = new BABYLON.Sprite(id, spriteManagerEnemy);
 		enemyDummy.size = 2;
+		enemyDummy.health = 20;
+		enemyDummy.abilites = [];
+		var rangedAttack = new Object();
+		rangedAttack.range = 3;
 
-		var randomOddX = Math.floor(Math.random() * (maxX - minX + 1)) + minX; 
-		if(randomOddX == maxX && maxX % 2 == 0)
-			randomOddX -= 1;
-		else
-			randomOddX += (randomOddX % 2 == 0) ? 1 : 0;
+		enemyDummy.type = enemyType;
+		if(enemyDummy.type == 'ranged') {
+			enemyDummy.abilites.push(rangedAttack);			
+		}
+console.log(enemyDummy);
+		var randomOddX, randomOddZ, targetVector;
+		// var healthBarMaterial = new BABYLON.StandardMaterial("healthBarMaterial", scene);
+		// healthBarMaterial.emissiveColor = BABYLON.Color3.Green();
+		// healthBarMaterial.backFaceCulling = false;
 
-		var randomOddZ = Math.floor(Math.random() * (maxZ - minZ + 1)) + minZ;
-		if(randomOddZ == maxZ && maxZ % 2 == 0)
-			randomOddZ -= 1;
-		else
-			randomOddZ += (randomOddZ % 2 == 0) ? 1 : 0;		
+		// var healthBarContainerMaterial = new BABYLON.StandardMaterial("healthBarContainerMaterial", scene);
+		// healthBarContainerMaterial.emissiveColor = BABYLON.Color3.Blue();
+		// healthBarContainerMaterial.backFaceCulling = false;
 
-		enemyDummy.position = new BABYLON.Vector3(randomOddX, 1, randomOddZ);	
+		// var dynamicTexture = new BABYLON.DynamicTexture("dynamicTexture", 512, scene, true);
+		// dynamicTexture.hasAlpha = true;
 
-		return enemyDummy;		
+		// var healthBarTextMaterial = new BABYLON.StandardMaterial("healthBarTextMaterial", scene);
+		// healthBarTextMaterial.emissiveTexture = dynamicTexture;
+		// healthBarTextMaterial.backFaceCulling = false;
+		// healthBarTextMaterial.emissiveColor = BABYLON.Color3.Green();
+
+		// var healthBarContainer = BABYLON.MeshBuilder.CreatePlane("healthBarContainer", { width: 2, height: 0.5, subdivisions: 4 }, scene);
+		// var healthBar = BABYLON.MeshBuilder.CreatePlane("healthBar", { width: 2, height: .5, subdivisions: 4 }, scene);
+
+		// var healthBarText = BABYLON.MeshBuilder.CreatePlane("healthBarText", { width: 2, height: 2, subdivisions: 4 }, scene);
+		// healthBarTextmaterial = healthBarMaterial;
+
+		// healthBarContainer.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;		
+
+		// healthBar.position = new BABYLON.Vector3(0, 0, -0.01);
+		// healthBarContainer.position = new BABYLON.Vector3(0, 3, 0);
+		// healthBarText.position = new BABYLON.Vector3(1.5, -0.4, 0);
+
+		// healthBar.parent = healthBarContainer;
+		// //healthBarContainer.parent = enemyDummy;
+		// healthBarText.parent = healthBarContainer;
+
+		// healthBar.material = healthBarMaterial;
+		// healthBarContainer.material = healthBarContainerMaterial;
+		// healthBarText.material = healthBarTextmaterial;
+
+		do {
+			randomOddX = Math.floor(Math.random() * (maxX - minX + 1)) + minX; 
+			if(randomOddX == maxX && maxX % 2 == 0)
+				randomOddX -= 1;
+			else
+				randomOddX += (randomOddX % 2 == 0) ? 1 : 0;
+
+			randomOddZ = Math.floor(Math.random() * (maxZ - minZ + 1)) + minZ;
+			if(randomOddZ == maxZ && maxZ % 2 == 0)
+				randomOddZ -= 1;
+			else
+				randomOddZ += (randomOddZ % 2 == 0) ? 1 : 0;	
+
+			targetVector = new BABYLON.Vector3(randomOddX, 1, randomOddZ);			
+		} while (comparePositions(targetVector));			
+		
+		enemyDummy.position = targetVector;			
+		currentPositions.set(id, enemyDummy.position);
+		enemies.push(enemyDummy);
+
+		return enemyDummy;				
 	}
 
+	// A function that compares a desired position (vector) to the currently taken positions on the board by all units. 
+	function comparePositions(vector) {
+		for(var value of currentPositions.values()) {
+			if(vector.x == value.x && vector.z == value.z)
+				return true;
+		}
+		return false;
+	}
+
+	// A functon to determine enemy actions.
+	function enemyAction(enemy) {
+		// An enemy can either move and attack, or do just one of those things. An attack ends the turn, whether the enemy has moved or not.
+
+		var enemyType = enemy.type;
+		var distanceX = Math.abs(enemy.position.x - player.position.x); 	
+		var distanceZ = Math.abs(enemy.position.z - player.position.z);
+
+		// enemy.abilities.forEach(function(ability) {
+		// 	if((distanceX == ability.range * tileSize) || (distanceZ == ability.range * tileSize)) {
+		// 		console.log("ATTACK!");
+		// 		useAbility(enemy, ability); 	
+		// 		currentEnemy--;
+		// 		return;			
+		// 	}
+		// });
+
+		if((distanceX == 3 * tileSize) || (distanceZ == 3 * tileSize)) {
+			console.log("ATTACK!");
+			useAbility(enemy, 'rangedAttack');
+			currentEnemy--;
+			if(currentEnemy >=0)
+				enemyAction(enemies[currentEnemy]);
+			else {
+				enemies.forEach(function(enemy) {
+					enemy.hasMoved = false;
+				});
+				currentEnemy = enemies.length - 1;
+			}			
+		}
+
+		if(!enemy.hasMoved) {
+			moveEnemy(boundaries, enemy);
+		}
+		else {
+			currentEnemy--;
+		}	
+
+		if(currentEnemy >=0)
+			enemyAction(enemies[currentEnemy]);	
+		else {
+			enemies.forEach(function(enemy) {
+				enemy.hasMoved = false;
+			});
+			currentEnemy = enemies.length - 1;
+		}		
+	}
+
+	// A function that moves an enemy unit. 
 	function moveEnemy(boundaries, enemy) {
+
+		//isAnimatable = false;
 
 		var distanceX = Math.abs(player.position.x - enemy.position.x); 
 		var distanceZ = Math.abs(player.position.z - enemy.position.z);
 		var newPos;
 
-		if(distanceX > tileSize || distanceZ > tileSize) {
+		if(distanceX >  tileSize || distanceZ >  tileSize) {
 
 			isAnimatable = false;
 
@@ -521,7 +759,11 @@ Game = function(canvasId) {
 
 			var stepX = (enemy.position.x > player.position.x) ? -tileSize : tileSize;
 			var stepZ = (enemy.position.z > player.position.z) ? -tileSize : tileSize;
-			var nextPos = new BABYLON.Vector3(enemy.position.x + stepX, 1, enemy.position.z + stepZ);							
+			var nextPos = new BABYLON.Vector3(enemy.position.x + stepX, 1, enemy.position.z + stepZ);	
+
+			// if(comparePositions(nextPos)) {
+			// 	// To do
+			// }						
 
 			var keysEnemy = [];
 			var finalFrame = 60;
@@ -536,14 +778,236 @@ Game = function(canvasId) {
 
 			scene.beginAnimation(enemy, 0, finalFrame, false, 1.0, function() {				
 
+				currentPositions.set(enemy.name, nextPos);
+
+
+				var newDistanceX = Math.abs(nextPos.x - player.position.x);
+				var newDistanceZ = Math.abs(nextPos.z - player.position.z);
+
+				if(newDistanceZ == 3 * tileSize || newDistanceX == 3 * tileSize) {
+					useAbility(enemy, 'rangedAttack');
+				}
+
+				 currentEnemy--;		
+				 if(currentEnemy >= 0)
+				 	moveEnemy(boundaries, enemies[currentEnemy]);	
+				 else
+				    currentEnemy = enemies.length - 1;
+
+				enemy.hasMoved = true;
+
 				isAnimatable = true;
 				enemyTurn = false;
 				playerTurn = true;
-
 			});	
 		}
+		else
+			battleMode = true;
 	}
 
+	function sleep(time) {
+		return new Promise((resolve) => setTimeout(resolve, time));
+	}
+
+	function useAbility(unit, ability, targetLocation) {
+		if(unit.name == 'player') {			
+			if(ability == 'skill_2') {		
+				var target = player.position.x + 3 * tileSize;		
+				for(var i = 0; i < tiles.length; i++) {
+					var tile = tiles[i];
+					if(tile.position.x == target) {
+						 console.log('lul');						
+						for(var j = 0; j < enemies.length; j++) {
+							if(tile.position.x == enemies[j].position.x && tile.position.z == enemies[j].position.z) {
+								console.log(enemies[j]);
+								skillInfoBar.children[0].text = "Player using Skill_2 on enemy " + enemies[j].name + " !";
+								skillInfoBar.levelVisible = true;
+								enemies[j].health -= 10;
+								switch(enemies[j].name) {
+									case 'ranged1':										;
+										hpFrame.children[4].text = enemies[j].health.toString();
+										break;
+									case 'ranged2':
+										hpFrame.children[6].text = enemies[j].health.toString();
+										break;
+									case 'ranged3':
+										hpFrame.children[8].text = enemies[j].health.toString();		
+										break;
+								}
+								setTimeout(function() {
+									skillInfoBar.levelVisible = false;
+									console.log(enemies[j]);
+									//enemies[j].health -= 10;
+								}, 3000);
+								// switch(enemies[j].name) {
+								// 	case 'ranged1':										;
+								// 		hpFrame.children[4].text = enemies[j].health.toString();
+								// 		break;
+								// 	case 'ranged2':
+								// 		hpFrame.children[6].text = enemies[j].health.toString();
+								// 		break;
+								// 	case 'ranged3':
+								// 		hpFrame.children[8].text = enemies[j].health.toString();		
+								// 		break;
+								// }
+								
+								console.log(enemies[j].health);
+								//break;
+							}
+						}
+					}
+				}
+			}
+		}	
+		if(unit.type == 'ranged') {
+			if(ability == 'rangedAttack') {
+				for(var i = 0; i < tiles.length; i++) {
+					var tile = tiles[i];
+					if(tile.position.x == player.position.x && tile.position.z == player.position.z) {
+						animateTileVisibility(tile, 30, 0.4);
+						skillInfoBar.children[0].text = "Enemy using Ranged Attack on the Player!";
+						skillInfoBar.levelVisible = true;
+						setTimeout(function() {
+							console.log(tile);
+							scene.stopAnimation(tile);
+							tile.visibility = 1.0;
+							skillInfoBar.levelVisible = false;
+							player.health -= 5;
+							hpFrame.children[2].text = player.health.toString();
+						}, 3000);
+						break;
+					}
+				}
+			}
+		}	
+	}
+
+	// A function that is used to generate a particle effect that origins from a certain object.
+	function emitParticles(targetObject) {
+
+		var origin = BABYLON.Mesh.CreateBox("particlesOrigin", 0.1, scene);
+		origin.position = targetObject.position;
+		origin.isVisible = true;
+
+		var particleSystem = new BABYLON.ParticleSystem("particleSystem", 2000, scene);
+
+		particleSystem.particleTexture = new BABYLON.Texture("assets/particles/flare.png", scene);
+
+		particleSystem.emitter = origin;
+		particleSystem.minEmitBox = new BABYLON.Vector3(-1, 0, 0);
+		particleSystem.maxEmitBox = new BABYLON.Vector3(1, 0, 0);
+
+		particleSystem.color1 = new BABYLON.Color4(0.7, 0.8, 1.0, 1.0);
+	    particleSystem.color2 = new BABYLON.Color4(0.2, 0.5, 1.0, 1.0);
+	    particleSystem.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+
+		particleSystem.minSize = 0.1;
+		particleSystem.maxSize = 0.5;
+
+		particleSystem.minLifeTime = 0.3;
+		particleSystem.maxLifeTime = 1.5;
+
+		particleSystem.emitRate = 1500;
+
+		particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+
+		particleSystem.gravity = new BABYLON.Vector3(0, -9.81, 0);
+
+		particleSystem.direction1 = new BABYLON.Vector3(-7, 8, 3);
+		particleSystem.direction2 = new BABYLON.Vector3(7, 8, -3);
+
+		particleSystem.minAngularSpeed = 0;
+		particleSystem.maxAngularSpeed = Math.PI;
+
+		particleSystem.minEmitPower = 1;
+		particleSystem.maxEmitPower = 3;
+		particleSystem.updateSpeed = 0.005;
+
+		particleSystem.disposeOnStop = true;
+
+		//particleSystem.start();
+
+	}
+
+	// A function that gives a range/area-of-effect preview of a given skill when the cursor is hovered above the skill name in the skill frame.
+	function telegraphTiles(range, origin, pattern) {
+
+		var location = origin.position;		
+
+		tiles.forEach(function(tile) {
+			switch(pattern) {
+				case 1: 
+					// Row left of unit.
+					if(tile.position.x == location.x - range)  {				
+						if(tile.position.z == location.z - range || tile.position.z == location.z || tile.position.z == location.z + range) {
+							
+							animateTileVisibility(tile, 30, 0.4);				
+						}					
+					}		
+					// Row of unit.
+					else if(tile.position.x == location.x) {
+						// Skip middle tile since it's the units location.
+						if(tile.position.z == location.z - range || tile.position.z == location.z + range) {
+
+							animateTileVisibility(tile, 30, 0.4);					
+						}
+					}
+					// Row right of unit.
+					else if(tile.position.x == location.x + range) {
+						if(tile.position.z == location.z - range || tile.position.z == location.z || tile.position.z == location.z + range) {
+							
+							animateTileVisibility(tile, 30, 0.4);			
+						}				
+					}
+					break;
+				case 2:
+					// Three tiles away from unit.
+					if(tile.position.x == location.x + range) {
+						if(tile.position.z == location.z)
+						{
+							//animateTileColor(tile, 30, new BABYLON.Color3(0.5, 0.5,0));
+							animateTileVisibility(tile, 30, 0.5);
+						}
+							
+						}					
+					break;				 
+			}			
+		});		
+	} 
+
+	function animateTileVisibility(tile, endFrame, targetVisibility) {
+
+		var animationTile = new BABYLON.Animation("tileAnimation", "visibility", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+		var keys = [];
+		keys.push({
+			frame: 0,
+			value: 1
+		});
+		keys.push({
+			frame: endFrame,
+			value: targetVisibility
+		});
+		animationTile.setKeys(keys);
+		tile.animations.push(animationTile);
+		scene.beginAnimation(tile, 0, endFrame, true);	
+	}
+
+	function animateTileColor(tile, endFrame, targetColor) {
+
+		var animationTile = new BABYLON.Animation("tileAnimation", "this.material.emissiveColor", 30, BABYLON.Animation.ANIMATIONTYPE_COLOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+		var keys = [];
+		keys.push({
+			frame: 0,
+			value: new BABYLON.Color3(0, 0, 0)
+		});
+		keys.push({
+			frame: endFrame,
+			value: targetColor
+		});
+		animationTile.setKeys(keys);
+		tile.animations.push(animationTile);
+		scene.beginAnimation(tile, 0, endFrame, true);	
+	}	
 };
 
 document.addEventListener("DOMContentLoaded", function () {
