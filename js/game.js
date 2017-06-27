@@ -819,25 +819,40 @@ console.log(enemyDummy);
 						 console.log('lul');						
 						for(var j = 0; j < enemies.length; j++) {
 							if(tile.position.x == enemies[j].position.x && tile.position.z == enemies[j].position.z) {
+								console.log(enemies[j]);
 								skillInfoBar.children[0].text = "Player using Skill_2 on enemy " + enemies[j].name + " !";
 								skillInfoBar.levelVisible = true;
-								setTimeout(function() {
-									skillInfoBar.levelVisible = false;
-								}, 3000);
+								enemies[j].health -= 10;
 								switch(enemies[j].name) {
-									case 'ranged1':
-										hpFrame.children[4] = enemies[j].health.toString();
+									case 'ranged1':										;
+										hpFrame.children[4].text = enemies[j].health.toString();
 										break;
 									case 'ranged2':
-										hpFrame.children[6] = enemies[j].health.toString();
+										hpFrame.children[6].text = enemies[j].health.toString();
 										break;
 									case 'ranged3':
-										hpFrame.children[8] = enemies[j].health.toString();		
+										hpFrame.children[8].text = enemies[j].health.toString();		
 										break;
 								}
+								setTimeout(function() {
+									skillInfoBar.levelVisible = false;
+									console.log(enemies[j]);
+									//enemies[j].health -= 10;
+								}, 3000);
+								// switch(enemies[j].name) {
+								// 	case 'ranged1':										;
+								// 		hpFrame.children[4].text = enemies[j].health.toString();
+								// 		break;
+								// 	case 'ranged2':
+								// 		hpFrame.children[6].text = enemies[j].health.toString();
+								// 		break;
+								// 	case 'ranged3':
+								// 		hpFrame.children[8].text = enemies[j].health.toString();		
+								// 		break;
+								// }
 								
 								console.log(enemies[j].health);
-								break;
+								//break;
 							}
 						}
 					}
