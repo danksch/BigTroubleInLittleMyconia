@@ -1,9 +1,7 @@
 Game = function(canvasId) {
 
 	var canvas = document.getElementById('renderCanvas');
-
 	var engine = new BABYLON.Engine(canvas, true);
-
 	var scene = new BABYLON.Scene(engine);
 	scene.clearColor = new BABYLON.Color3(74 / 255, 249 / 255, 68 / 255);
 
@@ -21,33 +19,20 @@ Game = function(canvasId) {
 		sound2 = new BABYLON.Sound("sound_2", task.data, scene);
 	};
 
+
 	var windowWidth = canvas.width;
 	var windowHeight = canvas.height;
 	var aspect = windowWidth / windowHeight;
 	var camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3.Zero(), scene);
-
-	//console.log(aspect);
-	// camera.position.y = 8;
-	// camera.position.z = -12;
-	// camera.position.x = 16;
-
 	camera.position.y = 14;
 	camera.position.z = -9;
 	camera.position.x = 16;
-	var targetVec = new BABYLON.Vector3(16, 1, 7);
-	//camera.setTarget(targetVec);
-
+	var targetVec = new BABYLON.Vector3(16, 1, 7);	
 	camera.rotation.x = 0.61;
-
 	camera.attachControl(canvas, false);
 	camera.fov = 0.8;
-
-
 	// Store camera alpha angle that will be applied to background image plane.
-	var cameraAngle = camera.rotation.x;
-	//console.log(cameraAngle);
-	//console.log(camera);
-
+	var cameraAngle = camera.rotation.x;	
 
 	// Sprite player manager and player parameters.
 	var spriteManagerPlayer = new BABYLON.SpriteManager('playerManager', 'assets/characters/cProtagonist.png', 1, 512, scene);
@@ -124,7 +109,6 @@ Game = function(canvasId) {
 		"sideOrientation" : BABYLON.Mesh.DEFAULTSIDE
 	};
 
-
 	// Create a grid that resembles the ground.
 	//var grid = {};
 	var tileSize = 2;
@@ -147,24 +131,22 @@ Game = function(canvasId) {
 	anchorBox.visibility = false;
 	//anchorBox.rotation.x = Math.PI / 2;
 
-
 	// Mouse controls.
 	var playerMovable = true;
 	scene.actionManager = new BABYLON.ActionManager(scene);
 
 	// Turn controls.
 	var playerTurn = true;
-	var enemyTurn = false;
-	var allEnemiesCleared = false;
+	var enemyTurn = false;	
 	var turnNumber = 1;		
 	var aimSkill = false;
 	var currentPositions = new Map();
 	currentPositions.set("player", player.position);	
 
 	// Spawn enemies.
-	var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(19, 1, 5));
-	var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 1', 'ranged', new BABYLON.Vector3(23, 1, 3));
-	var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 2', 'ranged', new BABYLON.Vector3(23, 1, 7));
+	var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 1', 'ranged', new BABYLON.Vector3(23, 1, 7));
+	var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 2', 'ranged', new BABYLON.Vector3(23, 1, 3));
+	var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(19, 1, 5));
 	var currentEnemy = enemies.length - 1;
 	
 	// 2D canvas that is used to display various ingame info.
@@ -174,6 +156,16 @@ Game = function(canvasId) {
         cachingStrategy: BABYLON.Canvas2D.CACHESTRATEGY_DONTCACHE
     });
 
+    // var spriteImageTexture = new BABYLON.Texture("img/gameover.png", scene, true, false, BABYLON.Texture.NEAREST_SAMPLINGMODE);
+    // spriteImageTexture.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
+    // spriteImageTexture.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
+    // var siSize = spriteImageTexture.getSize();
+    // var spriteImage = new BABYLON.Sprite2D(spriteImageTexture,
+    // 	 {
+    // 	 	parent: canvas2D, id: "spriteImage", x: canvas2D.width / 2 - 150, y: canvas2D.height / 2 - 40, invertY: true, spriteSize: new BABYLON.Size(300, 79), spriteLocation: new BABYLON.Vector2(0, 0)
+    // 	 }
+    // );
+
     // Add frame for the current turn.
     var turnFrame = new BABYLON.Rectangle2D({
     	id: "rectTopLeft", parent: canvas2D, width: 200, height: 100, x: 0, y: canvas2D.height - 100,
@@ -181,8 +173,8 @@ Game = function(canvasId) {
     	roundRadius: 10, isVisible: true,
     	children:
     	[
-    		new BABYLON.Text2D("Current Turn:", { id: "turnTextTitle", fontName: "20pt Arial", marginAlignment: "h: center, v: top" }),
-    		new BABYLON.Text2D(turnNumber.toString(), { id: "turnNumber", fontName: "25pt Arial", marginAlignment: "h: center, v: bottom", marginBottom: 15})
+    		new BABYLON.Text2D("Current Turn:", { id: "turnTextTitle", fontName: "20pt Arial", marginAlignment: "h: center, v: top", marginTop: 5 }),
+    		new BABYLON.Text2D(turnNumber.toString(), { id: "turnNumber", fontName: "25pt Arial", marginAlignment: "h: center, v: bottom", marginBottom: 15 })
     	]
     });
 
@@ -193,15 +185,15 @@ Game = function(canvasId) {
     	roundRadius: 10, isVisible: true,
     	children:
     	[
-    	new BABYLON.Text2D("Hit Points", { id: "hpTitle", fontName: "20pt Arial", marginAlignment: "h: center, v:top" }),
-    	new BABYLON.Text2D("Player:", { id: "playerHpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 30, marginLeft: 5}),
-    	new BABYLON.Text2D(player.health.toString(), { id: "playerHp", fontName: "20pt Arial", marginAlignment: "h: right, v: top", marginTop: 30, marginRight: 5}),
-    	new BABYLON.Text2D("Scrapper:", { id: "enemy_1HpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 60, marginLeft: 5}),
-    	new BABYLON.Text2D(enemy1.health.toString(), { id: "enemy_1Hp", fontName: "20pt Arial", marginAlignment: "h: right, v: top", marginTop: 60, marginRight: 5}),
-    	new BABYLON.Text2D("Marksman 1:", { id: "enemy_2HpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 90, marginLeft: 5}),
-    	new BABYLON.Text2D(enemy2.health.toString(), { id: "enemy_2Hp", fontName: "20pt Arial", marginAlignment: "h:right, v: top", marginTop: 90, marginRight: 5}),
-    	new BABYLON.Text2D("Marksman 2:", { id: "enemy_3HpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 120, marginLeft: 5}),
-    	new BABYLON.Text2D(enemy3.health.toString(), { id: "enemy_3Hp", fontName: "20pt Arial", marginAlignment: "h: right, v: top", marginTop: 120, marginRight: 5}),
+    	new BABYLON.Text2D("Hit Points", { id: "hpTitle", fontName: "20pt Arial", marginAlignment: "h: center, v:top", marginTop: 5 }),
+    	new BABYLON.Text2D("Player:", { id: "playerHpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 35, marginLeft: 5 }),
+    	new BABYLON.Text2D(player.health.toString(), { id: "playerHp", fontName: "20pt Arial", marginAlignment: "h: right, v: top", marginTop: 35, marginRight: 5 }),
+    	new BABYLON.Text2D("Scrapper:", { id: "enemy_1HpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 65, marginLeft: 5}),
+    	new BABYLON.Text2D(enemy3.health.toString(), { id: "enemy_1Hp", fontName: "20pt Arial", marginAlignment: "h: right, v: top", marginTop: 65, marginRight: 5 }),
+    	new BABYLON.Text2D("Marksman 1:", { id: "enemy_2HpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 95, marginLeft: 5}),
+    	new BABYLON.Text2D(enemy1.health.toString(), { id: "enemy_2Hp", fontName: "20pt Arial", marginAlignment: "h:right, v: top", marginTop: 95, marginRight: 5 }),
+    	new BABYLON.Text2D("Marksman 2:", { id: "enemy_3HpText", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 125, marginLeft: 5}),
+    	new BABYLON.Text2D(enemy2.health.toString(), { id: "enemy_3Hp", fontName: "20pt Arial", marginAlignment: "h: right, v: top", marginTop: 125, marginRight: 5 }),
     	]
     });
     
@@ -213,7 +205,7 @@ Game = function(canvasId) {
     	roundRadius: 10, isVisible: false,
     	children:
     	[
-    		new BABYLON.Text2D("Player has used the ability " + abilityName, { id: "skillInfo", fontName: "20pt Arial", marginAlignment: "h: center, v: center"})
+    		new BABYLON.Text2D("Player has used the ability " + abilityName, { id: "skillInfo", fontName: "20pt Arial", marginAlignment: "h: center, v: center" })
     		//new BABYLON.Text2D(abilityUsed, { id: "abilityUsed", fontName: "20pt Arial", marginAlignment: "h: right, v: center"})
     	]
     });
@@ -226,11 +218,11 @@ Game = function(canvasId) {
     });
 
     // Add content to the frame.
-    var skillsTitle = new BABYLON.Text2D("Abilities:", {parent: skillsFrame, id: "skillsTextTitle", fontName: "22pt Arial", marginAlignment: "h: center, v: top" });
-    var skill_1 = new BABYLON.Text2D("Dimensional Blade", {parent: skillsFrame, id: "attack_1", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 50, marginLeft: 10});
-    var skill_2 = new BABYLON.Text2D("Intensyfing Mark", {parent: skillsFrame, id: "attack_2", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 90, marginLeft: 10});
-    var skill_3 = new BABYLON.Text2D("Shatter", {parent: skillsFrame, id: "attack_3", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 130, marginLeft: 10});
-    var skill_4 = new BABYLON.Text2D("Multidimensional Dash", {parent: skillsFrame, id: "attack_4", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 170, marginLeft: 10});
+    var skillsTitle = new BABYLON.Text2D("Abilities:", {parent: skillsFrame, id: "skillsTextTitle", fontName: "22pt Arial", marginAlignment: "h: center, v: top", marginTop: 5 });
+    var skill_1 = new BABYLON.Text2D("Dimensional Blade", {parent: skillsFrame, id: "attack_1", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 50, marginLeft: 10 });
+    var skill_2 = new BABYLON.Text2D("Intensyfing Mark", {parent: skillsFrame, id: "attack_2", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 90, marginLeft: 10 });
+    var skill_3 = new BABYLON.Text2D("Shatter", {parent: skillsFrame, id: "attack_3", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 130, marginLeft: 10 });
+    var skill_4 = new BABYLON.Text2D("Multidimensional Dash", {parent: skillsFrame, id: "attack_4", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 170, marginLeft: 10 });
 
     // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
     skill_1.pointerEventObservable.add(function() {
@@ -296,6 +288,7 @@ Game = function(canvasId) {
     	});
     }, BABYLON.PrimitivePointerInfo.PointerLeave);
 
+    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
     skill_1.pointerEventObservable.add(function() {
     	if(player.abilities.player_skill_1.cooldown == 0) {
     		aimSkill = true;
@@ -311,6 +304,7 @@ Game = function(canvasId) {
     	}
     }, BABYLON.PrimitivePointerInfo.PointerUp);
 
+    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
     skill_2.pointerEventObservable.add(function() {
     	if(player.abilities.player_skill_2.cooldown == 0) {
     		aimSkill = true;
@@ -326,6 +320,7 @@ Game = function(canvasId) {
     	}
     }, BABYLON.PrimitivePointerInfo.PointerUp);
 
+    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
     skill_3.pointerEventObservable.add(function() {
     	if(player.abilities.player_skill_3.cooldown == 0) {
     		aimSkill = true;
@@ -341,6 +336,7 @@ Game = function(canvasId) {
     	}
     }, BABYLON.PrimitivePointerInfo.PointerUp);
 
+    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
     skill_4.pointerEventObservable.add(function() {
     	if(player.abilities.player_skill_4.cooldown == 0) {
     		aimSkill = true;
@@ -383,7 +379,7 @@ Game = function(canvasId) {
     	}
     })
 
-	// Iterate through rows and columns.
+	// Iterate through rows and columns; create tiles for the ground and add respective interaction with the pointer.
 	var tiles = [];
 	for (var x = 0 + tileSize / 2; x < gridWidth ; x += tileSize) {
 		for (var z = 0 + tileSize / 2; z < gridHeight; z += tileSize){
@@ -410,12 +406,12 @@ Game = function(canvasId) {
 						}
 					}
 					useAbility(player, abilityId, tile);
-					if(enemies.length < 1)
-						allEnemiesCleared = true;
+					// if(enemies.length < 1)
+					// 	allEnemiesCleared = true;
 				}
 
 				// Second pointer click mode that is the default one. Moves the player to the targeted tile, if in range.
-				else if(playerMovable && playerTurn /*&& (Math.abs(player.position.x - tile.position.x) <= tileSize && Math.abs(player.position.z - tile.position.z) <= tileSize)*/) {	
+				else if(playerMovable && playerTurn && !enemyTurn/*&& (Math.abs(player.position.x - tile.position.x) <= tileSize && Math.abs(player.position.z - tile.position.z) <= tileSize)*/) {	
 
 					playerMovable = false;						
 
@@ -493,16 +489,12 @@ Game = function(canvasId) {
 			else if( randomNumber == 3)
 				tile.material = groundMaterial3;
 			else
-				tile.material = groundMaterial4;
-
-			// Make box a parent.
-			// tile.parent = anchorBox;
+				tile.material = groundMaterial4;			
 
 			// Add tile to tiles array.
 			tiles.push(tile);
 		}
 	}
-
 
 	// Two random U-offset to get a randomized touch on the background placements.
 	var randomUOffset1 = Math.random();
@@ -584,20 +576,15 @@ Game = function(canvasId) {
   		axisZ.color = new BABYLON.Color3(0, 0, 1);
 	};
 
-//	showAxis(10);
-	//scene.debugLayer.show();
-
-	scene.registerBeforeRender(function() {
-				
-		if(allEnemiesCleared) {
-			reloadScene('mountains');
-		}
+	// Called every frame before rendering.
+	scene.registerBeforeRender(function() {		
 
 		if (!playerTurn && !enemyTurn) {		
 			roundEndClear();
 		}				
 	});
 
+	// When asset manager has loaded everything, we're ready to render.
 	preloader.onFinish = function (tasks) {
 		engine.runRenderLoop(function() {
 
@@ -607,12 +594,13 @@ Game = function(canvasId) {
 			scene.render();
 		});
 	}
-
+	// Load assets.
 	preloader.load();
-
+	// Resize render window on window change.
 	window.addEventListener('resize', function() {
 		engine.resize();
 	});
+
 
 	// A function that is called when both parties are finished and mechanic parameters must be re-evalued. It prepares for the next round.
 	function roundEndClear() {
@@ -621,7 +609,7 @@ Game = function(canvasId) {
 
 			// Adjust parameter changes (such as cooldown reduction) for each enemy.
 			// CDR.
-			for (ability in enemy.abilities) {
+			for(var ability in enemy.abilities) {
 				var currentAbility = enemy.abilities[ability];
 				if(currentAbility.cooldown > 0) {
 					currentAbility.cooldown -= 1;					
@@ -636,7 +624,7 @@ Game = function(canvasId) {
 				}
 				else {
 					enemy.taggedCounter = 0;
-					enenmy.tagged = false;
+					enemy.tagged = false;
 				}
 				
 			}	
@@ -654,7 +642,7 @@ Game = function(canvasId) {
 
 		// Adjust parameter changes (such as cooldown reduction) for the player.
 		// CDR.
-		for(ability in player.abilities) {
+		for(var ability in player.abilities) {
 			var currentAbility = player.abilities[ability];
 			if(currentAbility.cooldown > 0) {
 				currentAbility.cooldown -= 1;				
@@ -677,13 +665,17 @@ Game = function(canvasId) {
 		player.position.y = 1;
 		player.position.x = 9;
 		player.position.z = 5;
-		player.cellIndex = 0;
+		// player.cellIndex = 0;
 		player.health = 100;
+		for(var ability in player.abilities) {
+			var currentAbility = player.abilities[ability];
+			currentAbility.cooldown = 0;
+		}		
 
-		var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(19, 1, 5));
-		var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 1', 'ranged', new BABYLON.Vector3(23, 1, 3));
-		var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 2', 'ranged', new BABYLON.Vector3(23, 1, 7));
-		var currentEnemy = enemies.length - 1;
+		var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 1', 'ranged', new BABYLON.Vector3(19, 1, 5));
+		var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 2', 'ranged', new BABYLON.Vector3(23, 1, 3));
+		var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(23, 1, 7));
+		currentEnemy = enemies.length - 1;
 
 		allEnemiesCleared = false;
 		playerTurn = true;
@@ -691,10 +683,10 @@ Game = function(canvasId) {
 		enemyTurn = false;
 		turnNumber = 1;
 		turnFrame.children[1].text = turnNumber.toString();
-		turnFrame.children[2].text = player.health.toString();
-		turnFrame.children[4].text = enemy1.health.toString();
-		turnFrame.children[6].text = enemy2.health.toString();
-		turnFrame.children[8].text = enemy3.health.toString();
+		hpFrame.children[2].text = player.health.toString();
+		hpFrame.children[4].text = enemy3.health.toString();
+		hpFrame.children[6].text = enemy1.health.toString();
+		hpFrame.children[8].text = enemy2.health.toString();
 
 		// Idle sprite animation.
 		// player.stopAnimation();
@@ -1000,15 +992,16 @@ Game = function(canvasId) {
 	// A function that moves an enemy unit.
 	function actEnemy(boundaries, enemy) {
 
-		var readyToAttack = false;
-		var minDistanceToPlayer = enemy.type == 'ranged' ? 2 * tileSize : tileSize;
-		// console.log(minDistanceToPlayer);
+		if(enemy.disabled) {
+			actEnemy(boundaries, enemies[--currentEnemy]);
+			return;
+		}
+		
+		var minDistanceToPlayer = enemy.type == 'ranged' ? 2 * tileSize : tileSize;		
 		var distanceX = Math.abs(player.position.x - enemy.position.x);
 		var distanceZ = Math.abs(player.position.z - enemy.position.z);
 		var distanceToPlayer = BABYLON.Vector3.Distance(player.position, enemy.position);
-		var distanceToPlayerSquared = BABYLON.Vector3.DistanceSquared(player.position, enemy.position);
-		console.log('distance: ' + distanceToPlayer);
-		console.log('distanceSquared: ' + distanceToPlayerSquared);
+		var distanceToPlayerSquared = BABYLON.Vector3.DistanceSquared(player.position, enemy.position);		
 		var newPos;		
 	
 		var animationEnemy = new BABYLON.Animation("enemyAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
@@ -1051,13 +1044,12 @@ Game = function(canvasId) {
 			}
 		}
 		
-		if(BABYLON.Vector3.DistanceSquared(player.position, enemy.position) >= Math.pow(minDistanceToPlayer, 2) && BABYLON.Vector3.DistanceSquared(player.position, enemy.position) <= 2 * Math.pow(minDistanceToPlayer, 2)) {
-			console.log('derp');
-			nextPos = enemy.position;
-			readyToAttack = true;
+		if(BABYLON.Vector3.DistanceSquared(player.position, enemy.position) >= Math.pow(minDistanceToPlayer, 2) && BABYLON.Vector3.DistanceSquared(player.position, enemy.position) <= 2 * Math.pow(minDistanceToPlayer, 2)) {		
+
+			nextPos = enemy.position;			
 		}
 		else if(minDistanceToPlayer > distanceX && minDistanceToPlayer > distanceZ) {
-			console.log('next');
+			
 			if(enemy.position.x > player.position.x) {
 				nextPos.x = enemy.position.x + tileSize;
 			}
@@ -1076,8 +1068,7 @@ Game = function(canvasId) {
 			}
 			else if(enemy.position.z == player.position.z) {
 				nextPos.z = enemy.position.z;
-			}
-			
+			}			
 		}
 
 		var keysEnemy = [];
@@ -1098,11 +1089,7 @@ Game = function(canvasId) {
 
 		scene.beginAnimation(enemy, 0, finalFrame, false, 1.0, function() {
 
-			currentPositions.set(enemy.name, nextPos);	
-
-			// enemy.enemyMarks.forEach(function(mark) {				
-			// 	mark.levelVisible = !mark.levelVisible;
-			// });
+			currentPositions.set(enemy.name, nextPos);				
 
 			for(var i = 0; i < enemy.enemyMarks.length; i++) {
 				enemy.enemyMarks[i].position = new BABYLON.Vector3(enemy.position.x - 0.5 + i / 3, 2, enemy.position.z);				
@@ -1110,43 +1097,14 @@ Game = function(canvasId) {
 			checkMarks(enemy);
 
 			var attackType = enemy.type == 'ranged' ? 'ranged_default_attack' : 'melee_default_attack';	
-
-			// if(readyToAttack) {
-			// 	useAbility(enemy, attackType);
-			// }													
-
-			if(BABYLON.Vector3.DistanceSquared(player.position, nextPos) >= Math.pow(minDistanceToPlayer, 2) && BABYLON.Vector3.DistanceSquared(player.position, nextPos) <= 2 * Math.pow(minDistanceToPlayer, 2)) {
-				// for(var ability in enemy.abilities) {
-				// 	var currentAbility = enemy.abilities[ability];
-				// 	if(currentAbility.cooldown == 0) {
-				// 		useAbility(enemy, attackType);
-				// 		currentAbility.cooldown = currentAbility.cost;
-				// 	}
-				// }
-				useAbility(enemy, attackType);
-			}
-			// var newDistanceX = Math.abs(nextPos.x - player.position.x);
-			// var newDistanceZ = Math.abs(nextPos.z - player.position.z);				
-			// var newDistanceToPlayer = BABYLON.Vector3.DistanceSquared(player.position, nextPos);
-
-			// for(var ability in enemy.abilities) {	
-			// 	var	currentAbility = enemy.abilities[ability];			
-			// 	if((currentAbility.range == newDistanceX / tileSize) || (currentAbility.range == newDistanceZ / tileSize)) {										
-			// 		useAbility(enemy, 'rangedAttack');			
-			// 		currentAbility.cooldown = currentAbility.cost;								
-			// 	}
-			// }
-
 			
-			// for(var ability in enemy.abilities) {	
-			// 	var	currentAbility = enemy.abilities[ability];			
-			// 	if(distanceToPlayer) {										
-			// 		useAbility(enemy, 'rangedAttack');			
-			// 		currentAbility.cooldown = currentAbility.cost;								
-			// 	}
-			// }
-
+			if(BABYLON.Vector3.DistanceSquared(player.position, nextPos) >= Math.pow(minDistanceToPlayer, 2) && BABYLON.Vector3.DistanceSquared(player.position, nextPos) <= 2 * Math.pow(minDistanceToPlayer, 2)) 				
+				useAbility(enemy, attackType);
+						
 			currentEnemy--;
+			while(enemies[currentEnemy.disabled]){
+				currentEnemy--;	
+			}				
 			if(currentEnemy >= 0) {
 				setTimeout(function() {
 					actEnemy(boundaries, enemies[currentEnemy]);
@@ -1196,7 +1154,7 @@ Game = function(canvasId) {
 					if(tile.position.x == enemies[j].position.x && tile.position.z == enemies[j].position.z) {		
 
 						// Display current ability used, onto which enemy.
-						infoBar.children[0].text = "Player using " + textPiece + " on enemy " + enemies[j].name + " !";
+						infoBar.children[0].text = "Player using " + textPiece + "\n\t on enemy " + enemies[j].name + " !";
 						infoBar.levelVisible = true;						
 						
 						// Some abilities need further damage calculation and/or implementation of special effects, such as stun.
@@ -1223,7 +1181,7 @@ Game = function(canvasId) {
 								sound2.play();
 								currentPositions.set("player", player.position);
 							});							
-							// Damage increased by 100% per mark.
+							// Damage increased by 100% per mark. Consumes marks.
 							damage += damage * enemy.marks;	
 							enemy.marks = 0;					
 						}
@@ -1286,7 +1244,8 @@ Game = function(canvasId) {
 								mark.dispose();
 							});
 							infoBar.children[0].text = enemies[j].name + " vanquished!";
-							infoBar.levelVisible = true;	
+							infoBar.levelVisible = true;								
+							currentPositions.delete(enemy.name);							
 							enemies.splice(j, 1);
 							enemy.dispose();
 							currentEnemy = enemies.length - 1;							
@@ -1324,9 +1283,20 @@ Game = function(canvasId) {
 			player.abilities[ability].active = false;	
 
 			// Now that a player action has been used, it's the enemy's turn.
-			setTimeout(function() {
-				actEnemy(boundaries, enemies[currentEnemy]);	
-			}, 3000);				
+			if(enemies.length < 1) {
+				infoBar.children[0].text = "Level completed!";
+				infoBar.levelVisible = true;
+				setTimeout(function() {
+					infoBar.levelVisible = false;
+					reloadScene('mountains');
+					return;
+				}, 3000);
+			}
+			else {
+				setTimeout(function() {
+					actEnemy(boundaries, enemies[currentEnemy]);	
+				}, 3000);	
+			}						
 		}
 		else if(unit.type == 'ranged' || unit.type == 'melee') {
 
@@ -1353,6 +1323,10 @@ Game = function(canvasId) {
 						tile.visibility = 1.0;
 						infoBar.levelVisible = false;
 						player.health -= unit.abilities[ability].damage;
+						if(player.health <= 0) {
+							player.health = 0;
+							gameOver = true;
+						}
 						hpFrame.children[2].text = player.health.toString();
 					}, 3000);
 					break;
@@ -1362,9 +1336,11 @@ Game = function(canvasId) {
 		unit.abilities[ability].cooldown = unit.abilities[ability].cost;	
 	}
 
+	// Add player abilities.
 	function addPlayerAbilities() {
 
 		player.abilities = {
+			// Dimensional Stab
 			'player_skill_1' : {
 				range : 1,
 				cooldown : 0,
@@ -1372,6 +1348,7 @@ Game = function(canvasId) {
 				damage : 10,
 				active : false
 			},
+			// Intensfying Mark
 			'player_skill_2' : {
 				range : 2,
 				cooldown : 0,
@@ -1379,6 +1356,7 @@ Game = function(canvasId) {
 				damage : 0,
 				active : false
 			},
+			// Shatter
 			'player_skill_3' : {
 				range : 2,
 				cooldown : 0,
@@ -1386,6 +1364,7 @@ Game = function(canvasId) {
 				damage : 0,
 				active : false
 			},
+			// Multidimensional Dash
 			'player_skill_4' : {
 				range : 999,
 				cooldown : 0,
@@ -1503,6 +1482,7 @@ Game = function(canvasId) {
 		});
 	}
 
+	// Animate the visibility of tile(s).
 	function animateTileVisibility(tile, endFrame, targetVisibility) {
 
 		var animationTile = new BABYLON.Animation("tileAnimation", "visibility", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
@@ -1520,6 +1500,7 @@ Game = function(canvasId) {
 		scene.beginAnimation(tile, 0, endFrame, true);
 	}
 
+	// Animate the color of a tile -- *!*NOTE: doesn't work as of now, since changes to the used material apply to ALL tiles using the same material.*!*
 	function animateTileColor(tile, endFrame, targetColor) {
 
 		var animationTile = new BABYLON.Animation("tileAnimation", "this.material.emissiveColor", 30, BABYLON.Animation.ANIMATIONTYPE_COLOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
