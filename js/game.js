@@ -368,6 +368,7 @@ Game = function(canvasId) {
     	Needed for when the player wants to end the turn early without attacking or moving. 
     */
     window.addEventListener("keydown", function (evt) {
+    	// End turn manually.
     	if (evt.keyCode == 32 && playerTurn) {
     		var animatable = scene.getAnimatableByTarget(player);
     		if(animatable != null)
@@ -376,6 +377,15 @@ Game = function(canvasId) {
 			playerTurn = false;
     		enemyTurn = true;
     		actEnemy(boundaries, enemies[currentEnemy]);    		    		
+    	}
+    	// Leave skill aim mode.
+    	else if(evt.keyCode == 27 && aimSkill) {
+    		for(var ability in player.abilities) {
+						if(player.abilities[ability].active == true) {
+							player.abilities[ability].active = false;
+						}
+					}
+			aimSkill = false;	
     	}
     })
 
@@ -439,7 +449,7 @@ Game = function(canvasId) {
 					scene.beginAnimation(player, 0, finalFrame, false, 1.5, function() {
 
 						currentPositions.set("player", player.position);						
-						playerMovable = true;
+						
 						player.playAnimation(0, 2, true, 400);
 
 						//var worldMatrix = player.getWorldMatrix();
@@ -464,7 +474,7 @@ Game = function(canvasId) {
 						// 	});
 						// }
 						
-						playerMovable = false;
+						
 						// enemyTurn = true;
 						// playerTurn = false;		
 
@@ -921,9 +931,7 @@ Game = function(canvasId) {
 			} while (comparePositions(targetVector));
 
 			enemyDummy.position = targetVector;			
-		}
-		
-		
+		}		
 		
 		else {
 			enemyDummy.position = fixedPosition;
@@ -1002,7 +1010,7 @@ Game = function(canvasId) {
 		var distanceZ = Math.abs(player.position.z - enemy.position.z);
 		var distanceToPlayer = BABYLON.Vector3.Distance(player.position, enemy.position);
 		var distanceToPlayerSquared = BABYLON.Vector3.DistanceSquared(player.position, enemy.position);		
-		var newPos;		
+		var hideMarks = true;		
 	
 		var animationEnemy = new BABYLON.Animation("enemyAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
 
@@ -1045,7 +1053,7 @@ Game = function(canvasId) {
 		}
 		
 		if(BABYLON.Vector3.DistanceSquared(player.position, enemy.position) >= Math.pow(minDistanceToPlayer, 2) && BABYLON.Vector3.DistanceSquared(player.position, enemy.position) <= 2 * Math.pow(minDistanceToPlayer, 2)) {		
-
+			hideMarks = true;
 			nextPos = enemy.position;			
 		}
 		else if(minDistanceToPlayer > distanceX && minDistanceToPlayer > distanceZ) {
@@ -1082,25 +1090,32 @@ Game = function(canvasId) {
 		animationEnemy.setEasingFunction(easingFunction);
 		enemy.animations.push(animationEnemy);
 
-		enemy.enemyMarks.forEach(function(mark) {
-			if(mark.visibility = true)
-				mark.visibility = false;
-		});
+		// Hide marks prior to animation (don't if the position remains the same.)
+		if(hideMarks) {
+			enemy.enemyMarks.forEach(function(mark) {
+				if(mark.visibility = true)
+					mark.visibility = false;
+			});
+		}		
 
 		scene.beginAnimation(enemy, 0, finalFrame, false, 1.0, function() {
 
 			currentPositions.set(enemy.name, nextPos);				
 
-			for(var i = 0; i < enemy.enemyMarks.length; i++) {
-				enemy.enemyMarks[i].position = new BABYLON.Vector3(enemy.position.x - 0.5 + i / 3, 2, enemy.position.z);				
-			}
-			checkMarks(enemy);
+			// Change position of marks and make marks visible again.
+			if(hideMarks) {
+				for(var i = 0; i < enemy.enemyMarks.length; i++) {
+					enemy.enemyMarks[i].position = new BABYLON.Vector3(enemy.position.x - 0.5 + i / 3, 2, enemy.position.z);				
+				}
+				checkMarks(enemy);
+			}			
 
-			var attackType = enemy.type == 'ranged' ? 'ranged_default_attack' : 'melee_default_attack';	
-			
+			// When in range, attack player.
+			var attackType = enemy.type == 'ranged' ? 'ranged_default_attack' : 'melee_default_attack';				
 			if(BABYLON.Vector3.DistanceSquared(player.position, nextPos) >= Math.pow(minDistanceToPlayer, 2) && BABYLON.Vector3.DistanceSquared(player.position, nextPos) <= 2 * Math.pow(minDistanceToPlayer, 2)) 				
 				useAbility(enemy, attackType);
-						
+			
+			// Select next enemy.				
 			currentEnemy--;
 			while(enemies[currentEnemy.disabled]){
 				currentEnemy--;	
@@ -1111,10 +1126,10 @@ Game = function(canvasId) {
 				}, 1500);
 				// actEnemy(boundaries, enemies[currentEnemy]);
 			}
+			// When every enemy has acted, end round.
 			else
 				enemyTurn = false;				
-		}); 
-				
+		}); 				
 	}
 
 	function sleep(time) {
@@ -1122,6 +1137,11 @@ Game = function(canvasId) {
 	}
 
 	function useAbility(unit, ability, tile, targetLocation) {
+
+		if(unit.position.x > tile.position.x)
+			unit.invertU =  true;
+		else
+			unit.invertU = false;
 
 		if(unit.name == 'player') {
 
@@ -1148,7 +1168,7 @@ Game = function(canvasId) {
 			var hit = false;				
 			
 			if(distanceX <= range && distanceZ <= range) {
-				
+					
 				for(var j = 0; j < enemies.length; j++) {
 					var enemy = enemies[j];
 					if(tile.position.x == enemies[j].position.x && tile.position.z == enemies[j].position.z) {		
@@ -1224,17 +1244,7 @@ Game = function(canvasId) {
 						setTimeout(function() {
 							infoBar.levelVisible = false;															
 						}, 3000);
-						// switch(enemies[j].name) {
-						// 	case 'ranged1':										;
-						// 		hpFrame.children[4].text = enemies[j].health.toString();
-						// 		break;
-						// 	case 'ranged2':
-						// 		hpFrame.children[6].text = enemies[j].health.toString();
-						// 		break;
-						// 	case 'ranged3':
-						// 		hpFrame.children[8].text = enemies[j].health.toString();
-						// 		break;
-						// }
+						
 						// Remove enemy from the game if health has reached zero and cleanup its parameters.
 						if(enemies[j].health <= 0){
 							if(ability == 'player_skill_4') {
