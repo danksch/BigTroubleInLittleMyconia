@@ -411,7 +411,7 @@ Game = function(canvasId) {
 				}
 
 				// Second pointer click mode that is the default one. Moves the player to the targeted tile, if in range.
-				else if(playerMovable && playerTurn && !enemyTurn/*&& (Math.abs(player.position.x - tile.position.x) <= tileSize && Math.abs(player.position.z - tile.position.z) <= tileSize)*/) {	
+				else if(playerMovable && playerTurn && !enemyTurn && (Math.abs(player.position.x - tile.position.x) <= tileSize && Math.abs(player.position.z - tile.position.z) <= tileSize)) {	
 
 					playerMovable = false;						
 
