@@ -1,24 +1,24 @@
 Game = function(canvasId) {
 
 	var canvas = document.getElementById('renderCanvas');
+	canvas.width = 1280;
+	canvas.height = 720;
 	var engine = new BABYLON.Engine(canvas, true);
 	var scene = new BABYLON.Scene(engine);
-	scene.clearColor = new BABYLON.Color3(74 / 255, 249 / 255, 68 / 255);
+	scene.clearColor = new BABYLON.Color3(93 / 255, 93 / 255, 93 / 255);
+	// scene.clearColor = new BABYLON.Color3(74 / 255, 249 / 255, 68 / 255);
 
 	// Load assets via assets manager.
 	var preloader = new BABYLON.AssetsManager(scene);
 	var sound1, sound2, sound3, sound4;
 	var binaryTask = preloader.addBinaryFileTask("sound_1", "assets/sounds/blade.aac");
-	binaryTask.onSuccess = function (task) {
-		console.log(sound1);
+	binaryTask.onSuccess = function (task) {		
 		sound1 = new BABYLON.Sound("sound_1", task.data, scene);		
 	};
 	var binaryTask2 = preloader.addBinaryFileTask("sound_2", "assets/sounds/shift.aac");
-	binaryTask2.onSuccess = function (task) {
-		 console.log(sound2);
+	binaryTask2.onSuccess = function (task) {		 
 		sound2 = new BABYLON.Sound("sound_2", task.data, scene);
 	};
-
 
 	var windowWidth = canvas.width;
 	var windowHeight = canvas.height;
@@ -43,6 +43,7 @@ Game = function(canvasId) {
 	player.position.z = 5;
 	player.cellIndex = 0;
 	player.health = 100;
+	player.initiative = 2;
 	addPlayerAbilities();
 
 	// Idle sprite animation.
@@ -60,42 +61,46 @@ Game = function(canvasId) {
 	var groundMaterials = [];
 	var textureTask;
 	var groundMaterial0 = new BABYLON.StandardMaterial("Grass0", scene);
-	textureTask = preloader.addTextureTask("image task", "assets/tiles/plains/TilesGrassVariant0_128.png");
+	textureTask = preloader.addTextureTask("image task", "assets/tiles/mountains/TilesMountainGround0.png");
 	textureTask.onSuccess = function(task) {
 		groundMaterial0.emissiveTexture = task.texture;
 		groundMaterials.push(groundMaterial0);
 	}
 
 	var groundMaterial1 = new BABYLON.StandardMaterial("Grass1", scene);
-	textureTask = preloader.addTextureTask("image task", "assets/tiles/plains/TilesGrassVariant1_128.png");
+	textureTask = preloader.addTextureTask("image task", "assets/tiles/mountains/TilesMountainGround1.png");
 	textureTask.onSuccess = function(task) {
 		groundMaterial1.emissiveTexture = task.texture;
 		groundMaterials.push(groundMaterial1);
 	}
 
 	var groundMaterial2 = new BABYLON.StandardMaterial("Grass2", scene);
-	textureTask = preloader.addTextureTask("image task", "assets/tiles/plains/TilesGrassVariant2_128.png");
+	textureTask = preloader.addTextureTask("image task", "assets/tiles/mountains/TilesMountainGround2.png");
 	textureTask.onSuccess = function(task) {
 		groundMaterial2.emissiveTexture = task.texture;
 		groundMaterials.push(groundMaterial2);
 	}
 
 	var groundMaterial3 = new BABYLON.StandardMaterial("Grass3", scene);
-	textureTask = preloader.addTextureTask("image task", "assets/tiles/plains/TilesGrassVariant3_128.png");
+	textureTask = preloader.addTextureTask("image task", "assets/tiles/mountains/TilesMountainGround3.png");
 	textureTask.onSuccess = function(task) {
 		groundMaterial3.emissiveTexture = task.texture;
 		groundMaterials.push(groundMaterial3);
 	}
 
 	var groundMaterial4 = new BABYLON.StandardMaterial("Grass4", scene);
-	textureTask = preloader.addTextureTask("image task", "assets/tiles/plains/TilesGrassVariant4_128.png");
+	textureTask = preloader.addTextureTask("image task", "assets/tiles/mountains/TilesMountainGround4.png");
 	textureTask.onSuccess = function(task) {
 		groundMaterial4.emissiveTexture = task.texture;
 		groundMaterials.push(groundMaterial4);
 	}
 
 	var groundMaterial5 = new BABYLON.StandardMaterial("Grass5", scene);
-	groundMaterials.push(groundMaterial5);
+	textureTask = preloader.addTextureTask("image task", "assets/tiles/mountains/TilesMountainGround5.png");
+	textureTask.onSuccess = function(task) {
+		groundMaterial5.emissiveTexture = task.texture;
+		groundMaterials.push(groundMaterial5);
+	}	
 
 	var gridMaterial = new BABYLON.GridMaterial('gridMaterial', scene)
 	gridMaterial.majorUnitFrequency = 0;
@@ -139,6 +144,7 @@ Game = function(canvasId) {
 	var playerTurn = true;
 	var enemyTurn = false;	
 	var turnNumber = 1;		
+	var tick = 1;
 	var aimSkill = false;
 	var currentPositions = new Map();
 	currentPositions.set("player", player.position);	
@@ -156,6 +162,22 @@ Game = function(canvasId) {
         cachingStrategy: BABYLON.Canvas2D.CACHESTRATEGY_DONTCACHE
     });
 
+	var UIsprite;
+	textureTask = preloader.addTextureTask("image task", "assets_ALT/levels/mountains/interface/0_scaled.png");
+	// textureTask = preloader.addTextureTask("image task", "img/lesprite.png");
+	textureTask.onSuccess = function(task) {
+		// task.texture.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
+		// task.texture.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
+		// task.texture.uScale = 0.2;
+		task.texture.hasAlpha = true;
+		UIsprite = new BABYLON.Sprite2D(task.texture, 
+		{	
+			parent: canvas2D, id: "UIsprite", x: 0, y: -1, invertY: false, spriteSize: null, 
+			spriteLocation: null
+		});
+		console.log('yay');
+		console.log(task.texture.getSize());
+	}
     // var spriteImageTexture = new BABYLON.Texture("img/gameover.png", scene, true, false, BABYLON.Texture.NEAREST_SAMPLINGMODE);
     // spriteImageTexture.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
     // spriteImageTexture.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
@@ -219,7 +241,7 @@ Game = function(canvasId) {
 
     // Add content to the frame.
     var skillsTitle = new BABYLON.Text2D("Abilities:", {parent: skillsFrame, id: "skillsTextTitle", fontName: "22pt Arial", marginAlignment: "h: center, v: top", marginTop: 5 });
-    var skill_1 = new BABYLON.Text2D("Dimensional Blade", {parent: skillsFrame, id: "attack_1", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 50, marginLeft: 10 });
+    var skill_1 = new BABYLON.Text2D("Dimensional Stab", {parent: skillsFrame, id: "attack_1", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 50, marginLeft: 10 });
     var skill_2 = new BABYLON.Text2D("Intensyfing Mark", {parent: skillsFrame, id: "attack_2", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 90, marginLeft: 10 });
     var skill_3 = new BABYLON.Text2D("Shatter", {parent: skillsFrame, id: "attack_3", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 130, marginLeft: 10 });
     var skill_4 = new BABYLON.Text2D("Multidimensional Dash", {parent: skillsFrame, id: "attack_4", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 170, marginLeft: 10 });
@@ -489,7 +511,7 @@ Game = function(canvasId) {
 			tile.actionManager.registerAction(action3);
 
 			// Distribute tile textures randomly.
-			var randomNumber = Math.floor(Math.random() * 5);
+			var randomNumber = Math.floor(Math.random() * 6);
 			if (randomNumber == 0)
 				tile.material = groundMaterial0;
 			else if (randomNumber == 1)
@@ -498,8 +520,10 @@ Game = function(canvasId) {
 				tile.material = groundMaterial2;
 			else if( randomNumber == 3)
 				tile.material = groundMaterial3;
+			else if(randomNumber == 4)
+				tile.material = groundMaterial4;
 			else
-				tile.material = groundMaterial4;			
+				tile.material = groundMaterial5; 			
 
 			// Add tile to tiles array.
 			tiles.push(tile);
@@ -512,7 +536,7 @@ Game = function(canvasId) {
 
 	// Texture for sky material.
 	var skyMaterial = new BABYLON.StandardMaterial('skyMaterial', scene);
-	textureTask = preloader.addTextureTask("image task", "assets/levels/grasslands/backgrounds/back/0.png");
+	textureTask = preloader.addTextureTask("image task", "assets/levels/mountains/backgrounds/back/0.png");
 	textureTask.onSuccess = function (task) {
 		skyMaterial.emissiveTexture = task.texture;
 		//skyMaterial.opacityTexture = skyMaterial.emissiveTexture;
@@ -521,7 +545,7 @@ Game = function(canvasId) {
 
 	// Texture for background plane.
 	var bgMaterial = new BABYLON.StandardMaterial('bgMaterial', scene);
-	textureTask = preloader.addTextureTask("image task", "assets/levels/grasslands/backgrounds/front/1.png");
+	textureTask = preloader.addTextureTask("image task", "assets/levels/mountains/backgrounds/front/1.png");
 	textureTask.onSuccess = function (task) {
 		bgMaterial.emissiveTexture = task.texture;
 		bgMaterial.opacityTexture = bgMaterial.emissiveTexture;
@@ -534,22 +558,8 @@ Game = function(canvasId) {
 		bgMaterial.emissiveTexture.uOffset = randomUOffset1;
 	}
 
-	// Create background plane for sky.
-	var skyPlane = BABYLON.MeshBuilder.CreatePlane('skyPlane', {width: gridWidth * 2.5, height: gridHeight}, scene, false, BABYLON.MeshBuilder.FRONTSIDE);
-	skyPlane.material = skyMaterial;
-	skyPlane.position = new BABYLON.Vector3(gridWidth / 2, gridHeight / 2 - 4 * tileSize , gridHeight + 16 * tileSize);
-	skyPlane.rotation.x = camera.rotation.x;
-
-	// Create front-background plane.
-	var bgPlane = BABYLON.MeshBuilder.CreatePlane('bgPlane', {width: gridWidth * 1.5, height: gridHeight}, scene, false, BABYLON.MeshBuilder.FRONTSIDE);
-	bgPlane.material = bgMaterial;
-	//bgPlane.showBoundingBox = true;
-	//var offsetY = bgPlane.height / 2;
-	bgPlane.position = new BABYLON.Vector3(gridWidth / 2 , gridHeight / 2 - 2 * tileSize, gridHeight + 2 * tileSize);
-	bgPlane.rotation.x = cameraAngle;
-
 	var bgMaterialSmall = new BABYLON.StandardMaterial('bgMaterialSmall', scene);
-	textureTask = preloader.addTextureTask("image task", "assets/levels/grasslands/backgrounds/front/0.png");
+	textureTask = preloader.addTextureTask("image task", "assets/levels/mountains/backgrounds/front/0.png");
 	textureTask.onSuccess = function (task) {
 		bgMaterialSmall.emissiveTexture = task.texture;
 		bgMaterialSmall.opacityTexture = bgMaterialSmall.emissiveTexture;
@@ -560,7 +570,7 @@ Game = function(canvasId) {
 	}
 
 	var bgMaterialSmall2 = new BABYLON.StandardMaterial('bgMaterialSmall2', scene);
-	textureTask = preloader.addTextureTask("image task", "assets/levels/grasslands/backgrounds/front/2.png");
+	textureTask = preloader.addTextureTask("image task", "assets/levels/mountains/backgrounds/front/2.png");
 	textureTask.onSuccess = function (task) {
 		bgMaterialSmall2.emissiveTexture = task.texture;
 		bgMaterialSmall2.opacityTexture = bgMaterialSmall2.emissiveTexture;
@@ -570,8 +580,23 @@ Game = function(canvasId) {
 		bgMaterialSmall2.emissiveTexture.uOffset = randomUOffset2;
 	}
 
+	// Create background plane for sky.
+	var skyPlane = BABYLON.MeshBuilder.CreatePlane('skyPlane', {width: gridWidth * 2.5, height: gridHeight}, scene, false, BABYLON.MeshBuilder.FRONTSIDE);
+	skyPlane.material = skyMaterial;
+	skyPlane.position = new BABYLON.Vector3(gridWidth / 2, -3 , gridHeight + 16 * tileSize);
+	skyPlane.rotation.x = camera.rotation.x;
+
+	// Create front-background plane.
+	var bgPlane = BABYLON.MeshBuilder.CreatePlane('bgPlane', {width: gridWidth * 1.5, height: gridHeight}, scene, false, BABYLON.MeshBuilder.FRONTSIDE);
+	bgPlane.material = bgMaterial;
+	//bgPlane.showBoundingBox = true;
+	//var offsetY = bgPlane.height / 2;
+	bgPlane.position = new BABYLON.Vector3(gridWidth / 2 , 3, gridHeight + 2 * tileSize);
+	bgPlane.rotation.x = cameraAngle;	
+
+	// 
 	var bgPlaneSmall = BABYLON.MeshBuilder.CreatePlane('bgPlaneSmall', {width: 2.25 * gridWidth, height: 2 * gridWidth / 8}, scene, false, BABYLON.MeshBuilder.FRONTSIDE);
-	bgPlaneSmall.position = new BABYLON.Vector3(gridWidth / 2 , gridHeight / 2 - 4 * tileSize, gridHeight + 10 * tileSize);
+	bgPlaneSmall.position = new BABYLON.Vector3(gridWidth / 2 , 0.5, gridHeight + 10 * tileSize);
 	bgPlaneSmall.material = ~~(Math.random() * 2) ? bgMaterialSmall : bgMaterialSmall2;
 	bgPlaneSmall.rotation.x = cameraAngle;
 
@@ -585,13 +610,29 @@ Game = function(canvasId) {
   		var axisZ = BABYLON.Mesh.CreateLines("axisZ", [new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 0, size) ], scene);
   		axisZ.color = new BABYLON.Color3(0, 0, 1);
 	};
-
+var doOnce = 0;
 	// Called every frame before rendering.
 	scene.registerBeforeRender(function() {		
 
+		// if(tick % player.initiative == 0) {
+		// 	if(doOnce == 0) {
+		// 		console.log(tick);
+		// 	console.log(player.initiative);
+		// 	console.log(tick % player.initiative);
+		// 	}	
+		// 	doOnce++;
+		// 	playerTurn = true;			
+		// }
+		// else {
+		// 	playerTurn = false;
+		// 	actEnemy(enemies[currentEnemy]);
+		// }
+			
 		if (!playerTurn && !enemyTurn) {		
 			roundEndClear();
 		}				
+
+
 	});
 
 	// When asset manager has loaded everything, we're ready to render.
@@ -614,7 +655,7 @@ Game = function(canvasId) {
 
 	// A function that is called when both parties are finished and mechanic parameters must be re-evalued. It prepares for the next round.
 	function roundEndClear() {
-
+		console.log('clear');
 		enemies.forEach(function(enemy) {
 
 			// Adjust parameter changes (such as cooldown reduction) for each enemy.
@@ -660,6 +701,7 @@ Game = function(canvasId) {
 		}		
 		// Adjust/reset game control values. 		
 		turnNumber++;
+		tick++;
 		turnFrame.children[1].text = turnNumber.toString();
 		currentEnemy = enemies.length - 1;		
 		playerTurn = true;
@@ -667,6 +709,8 @@ Game = function(canvasId) {
 	}
 
 	function reloadScene(level) {
+
+		var groundMaterial0, groundMaterial1, groundMaterial3, groundMaterial4, groundMaterial5;
 
 		camera.position.y = 14;
 		camera.position.z = -9;
@@ -686,8 +730,7 @@ Game = function(canvasId) {
 		var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 2', 'ranged', new BABYLON.Vector3(23, 1, 3));
 		var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(23, 1, 7));
 		currentEnemy = enemies.length - 1;
-
-		allEnemiesCleared = false;
+		
 		playerTurn = true;
 		playerMovable = true;
 		enemyTurn = false;
@@ -738,15 +781,7 @@ Game = function(canvasId) {
 				bgMaterialSmall2.emissiveTexture.uScale = 2.0;
 
 				bgPlaneSmall.setEnabled(false);
-			}
-
-			// for(var i = 0; i <= 5; i++) {
-			// 	textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround" + i + ".png");
-			// 	textureTask.onSuccess = function (task) {
-			// 		groundMaterials[i].emissiveTexture.dispose();
-			// 		groundMaterials[i].emissiveTexture = task.texture;
-			// 	}
-			// }
+			}			
 
 			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround0.png");
 			textureTask.onSuccess = function (task) {
@@ -830,7 +865,7 @@ Game = function(canvasId) {
 		}
 		
 		// Add properties.
-		enemyDummy.size = 2;		
+		enemyDummy.size = 2.5;		
 		enemyDummy.marks = 0;
 		enemyDummy.disabled = false;
 		enemyDummy.disabledCounter = 0;
@@ -1000,7 +1035,8 @@ Game = function(canvasId) {
 	// A function that moves an enemy unit.
 	function actEnemy(boundaries, enemy) {
 
-		if(enemy.disabled) {
+		if(enemy.disabled /*|| !checkInitiative(enemy)*/) {
+			console.log('hi');
 			actEnemy(boundaries, enemies[--currentEnemy]);
 			return;
 		}
@@ -1011,8 +1047,6 @@ Game = function(canvasId) {
 		var distanceToPlayer = BABYLON.Vector3.Distance(player.position, enemy.position);
 		var distanceToPlayerSquared = BABYLON.Vector3.DistanceSquared(player.position, enemy.position);		
 		var hideMarks = true;		
-	
-		var animationEnemy = new BABYLON.Animation("enemyAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
 
 		// Determine movement direction on X-direction.
 		var stepX = (enemy.position.x > player.position.x) ? -tileSize : tileSize;		
@@ -1079,12 +1113,15 @@ Game = function(canvasId) {
 			}			
 		}
 
+		// Set up animation.
+		var animationEnemy = new BABYLON.Animation("enemyAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
 		var keysEnemy = [];
 		var finalFrame = 60;
 		keysEnemy.push({ frame: 0, value: enemy.position });
 		keysEnemy.push({ frame: finalFrame, value: nextPos });
 		animationEnemy.setKeys(keysEnemy);
 
+		// Set up easing function which is added to animation.
 		var easingFunction = new BABYLON.SineEase();
 		easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
 		animationEnemy.setEasingFunction(easingFunction);
@@ -1098,9 +1135,23 @@ Game = function(canvasId) {
 			});
 		}		
 
+		// Adjust facing direction towards movement.
+		if(enemy.position.x > nextPos.x)
+			enemy.invertU = false;
+		else
+			enemy.invertU = true;
+
+		// Start animating.
 		scene.beginAnimation(enemy, 0, finalFrame, false, 1.0, function() {
 
+			// Update saved position.
 			currentPositions.set(enemy.name, nextPos);				
+
+			// Adjust facing direction towards player.
+			if(enemy.position.x > nextPos.x) 
+				enemy.invertU = true;
+			else
+				enemy.invertU = false;
 
 			// Change position of marks and make marks visible again.
 			if(hideMarks) {
@@ -1117,7 +1168,7 @@ Game = function(canvasId) {
 			
 			// Select next enemy.				
 			currentEnemy--;
-			while(enemies[currentEnemy.disabled]){
+			while(enemies[currentEnemy.disabled] /*|| !checkInitiative(enemies[currentEnemy])*/){
 				currentEnemy--;	
 			}				
 			if(currentEnemy >= 0) {
@@ -1136,14 +1187,14 @@ Game = function(canvasId) {
 		return new Promise((resolve) => setTimeout(resolve, time));
 	}
 
-	function useAbility(unit, ability, tile, targetLocation) {
-
-		if(unit.position.x > tile.position.x)
-			unit.invertU =  true;
-		else
-			unit.invertU = false;
+	function useAbility(unit, ability, tile, targetLocation) {	
 
 		if(unit.name == 'player') {
+
+			if(player.position.x > tile.position.x)
+				player.invertU = true;
+			else 
+				player.invertU = false;
 
 			// Get ability range and current tile/player-distance.
 			var range = tileSize * player.abilities[ability].range;
@@ -1310,8 +1361,12 @@ Game = function(canvasId) {
 		}
 		else if(unit.type == 'ranged' || unit.type == 'melee') {
 
-			var textPiece;
+			if(unit.position.x > player.position.x)
+				unit.invertU = false;
+			else
+				unit.invertU = true;
 
+			var textPiece;
 			if(ability == 'ranged_default_attack') 
 				textPiece = 'Ranged Attack';
 			else if(ability == 'ranged_special_attack')
@@ -1327,8 +1382,7 @@ Game = function(canvasId) {
 					animateTileVisibility(tile, 30, 0.4);
 					infoBar.children[0].text = "Enemy using " + textPiece + " on the Player!";
 					infoBar.levelVisible = true;
-					setTimeout(function() {
-						console.log(tile);
+					setTimeout(function() {						
 						scene.stopAnimation(tile);
 						tile.visibility = 1.0;
 						infoBar.levelVisible = false;
@@ -1528,6 +1582,14 @@ Game = function(canvasId) {
 		scene.beginAnimation(tile, 0, endFrame, true);
 	}
 };
+
+function checkInitiative(unit) {
+	console('inside');
+	if(tick % unit.initiative == 0) 
+		return true;
+	else
+		return false;
+}
 
 document.addEventListener("DOMContentLoaded", function () {
 	new Game('renderCanvas');
