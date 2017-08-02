@@ -15,8 +15,8 @@ Game = function(canvasId) {
 	binaryTask.onSuccess = function (task) {		
 		sound1 = new BABYLON.Sound("sound_1", task.data, scene);		
 	};
-	var binaryTask2 = preloader.addBinaryFileTask("sound_2", "assets/sounds/shift.aac");
-	binaryTask2.onSuccess = function (task) {		 
+	var binaryTask2 = preloader.addBinaryFileTask("sound_2", "assets/sounds/shift.aac")
+;	binaryTask2.onSuccess = function (task) {		 
 		sound2 = new BABYLON.Sound("sound_2", task.data, scene);
 	};
 
@@ -162,31 +162,17 @@ Game = function(canvasId) {
         cachingStrategy: BABYLON.Canvas2D.CACHESTRATEGY_DONTCACHE
     });
 
-	var UIsprite;
-	textureTask = preloader.addTextureTask("image task", "assets_ALT/levels/mountains/interface/0_scaled.png");
-	// textureTask = preloader.addTextureTask("image task", "img/lesprite.png");
-	textureTask.onSuccess = function(task) {
-		// task.texture.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
-		// task.texture.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
-		// task.texture.uScale = 0.2;
+    var spriteUI;
+	textureTask = preloader.addTextureTask("image task", "assets_ALT/levels/mountains/interface/0_scaled.png");	
+	textureTask.onSuccess = function(task) {		
 		task.texture.hasAlpha = true;
-		UIsprite = new BABYLON.Sprite2D(task.texture, 
+		spriteUI = new BABYLON.Sprite2D(task.texture, 
 		{	
-			parent: canvas2D, id: "UIsprite", x: 0, y: -1, invertY: false, spriteSize: null, 
+			parent: canvas2D, id: "spriteUI", x: 0, y: -1, invertY: false, spriteSize: null, 
 			spriteLocation: null
-		});
-		console.log('yay');
-		console.log(task.texture.getSize());
-	}
-    // var spriteImageTexture = new BABYLON.Texture("img/gameover.png", scene, true, false, BABYLON.Texture.NEAREST_SAMPLINGMODE);
-    // spriteImageTexture.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
-    // spriteImageTexture.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
-    // var siSize = spriteImageTexture.getSize();
-    // var spriteImage = new BABYLON.Sprite2D(spriteImageTexture,
-    // 	 {
-    // 	 	parent: canvas2D, id: "spriteImage", x: canvas2D.width / 2 - 150, y: canvas2D.height / 2 - 40, invertY: true, spriteSize: new BABYLON.Size(300, 79), spriteLocation: new BABYLON.Vector2(0, 0)
-    // 	 }
-    // );
+		});		
+		console.log(task.texture);
+	}   
 
     // Add frame for the current turn.
     var turnFrame = new BABYLON.Rectangle2D({
@@ -260,6 +246,8 @@ Game = function(canvasId) {
     			animatable.stop();
     		}
     	});
+    	infoBar.children[0].text = "Damaging close combat skill that marks an enemy";
+    	infoBar.visibility = true;
     }, BABYLON.PrimitivePointerInfo.PointerLeave);
 
     // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
@@ -276,6 +264,7 @@ Game = function(canvasId) {
     			animatable.stop();
     		}
     	});
+    	infoBar.visibility = false;
     }, BABYLON.PrimitivePointerInfo.PointerLeave);
 
     // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
@@ -637,6 +626,9 @@ var doOnce = 0;
 
 	// When asset manager has loaded everything, we're ready to render.
 	preloader.onFinish = function (tasks) {
+		// Put the interface sprite at the bottom of Z-ordering, so it doesn't override mounse interaction with the skill set.
+		spriteUI.zOrder = 1;
+		// Render loop.
 		engine.runRenderLoop(function() {
 
 			// Simulate sky movement.
@@ -647,6 +639,7 @@ var doOnce = 0;
 	}
 	// Load assets.
 	preloader.load();
+
 	// Resize render window on window change.
 	window.addEventListener('resize', function() {
 		engine.resize();
@@ -655,7 +648,7 @@ var doOnce = 0;
 
 	// A function that is called when both parties are finished and mechanic parameters must be re-evalued. It prepares for the next round.
 	function roundEndClear() {
-		console.log('clear');
+		
 		enemies.forEach(function(enemy) {
 
 			// Adjust parameter changes (such as cooldown reduction) for each enemy.
