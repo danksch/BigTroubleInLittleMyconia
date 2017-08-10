@@ -9,7 +9,8 @@
 	<script src="js/babylon.gridMaterial.js"></script>
 	<script src="js/LevelAssetLoader.js"></script>
 	<script src="js/game.js"></script>
-	<style>
+	<style>	
+
 		html, body {
 			overflow: hidden;
 			width: 100%;
@@ -18,14 +19,34 @@
 			padding: 0;
 		}
 
+		.viewportRatio(@x, @y) {
+		  width: 100vw;
+		  height: @y * 100vw / @x;
+		  max-width: @x / @y * 100vh;
+		  max-height: 100vh;
+		}
+
 		#renderCanvas {
-			padding: 0;
+			/*padding: 0;
 			margin: auto;
 			width: 1422px;
 			height: 800px;
 			touch-action: none;
 			border-style: solid;
 			border-color: black;
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;*/
+			/*.viewportRatio(5, 1);	*/
+			width: 90vw;
+			height: 50.625vw;				
+			border-style: solid;
+			border-color: black;
+			max-height: 90vh;
+			max-width: 160vh;
+			margin: auto;
 			position: absolute;
 			top: 0;
 			bottom: 0;

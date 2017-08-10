@@ -1,35 +1,35 @@
 Game = function(canvasId) {
 
 	var canvas = document.getElementById('renderCanvas');
-	canvas.width = 1280;
-	canvas.height = 720;
 	var engine = new BABYLON.Engine(canvas, true);
 	var scene = new BABYLON.Scene(engine);
 	scene.clearColor = new BABYLON.Color3(93 / 255, 93 / 255, 93 / 255);
-	// scene.clearColor = new BABYLON.Color3(74 / 255, 249 / 255, 68 / 255);
-
+	
 	// Load assets via assets manager.
 	var preloader = new BABYLON.AssetsManager(scene);
+
+	// Load sound files via asset manager.
 	var sound1, sound2, sound3, sound4;
 	var binaryTask = preloader.addBinaryFileTask("sound_1", "assets/sounds/blade.aac");
 	binaryTask.onSuccess = function (task) {		
 		sound1 = new BABYLON.Sound("sound_1", task.data, scene);		
 	};
-	var binaryTask2 = preloader.addBinaryFileTask("sound_2", "assets/sounds/shift.aac")
-;	binaryTask2.onSuccess = function (task) {		 
+	var binaryTask2 = preloader.addBinaryFileTask("sound_2", "assets/sounds/shift.aac");
+	binaryTask2.onSuccess = function (task) {		 
 		sound2 = new BABYLON.Sound("sound_2", task.data, scene);
 	};
-
-	var windowWidth = canvas.width;
-	var windowHeight = canvas.height;
-	var aspect = windowWidth / windowHeight;
+	var binaryTask3 = preloader.addBinaryFileTask("sound_3", "assets/sounds/explosion.aac");
+	binaryTask3.onSuccess = function (task) {
+		sound3 = new BABYLON.Sound("sound_3", task.data, scene);
+	};
+	
+	// Set up camera.
 	var camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3.Zero(), scene);
-	camera.position.y = 14;
-	camera.position.z = -9;
-	camera.position.x = 16;
-	var targetVec = new BABYLON.Vector3(16, 1, 7);	
-	camera.rotation.x = 0.61;
-	camera.attachControl(canvas, false);
+	camera.position.y = 14; // 14 before
+	camera.position.z = -9; // -9 before
+	camera.position.x = 16;		
+	camera.rotation.x = 0.61; // 61 before
+	//camera.attachControl(canvas, false);
 	camera.fov = 0.8;
 	// Store camera alpha angle that will be applied to background image plane.
 	var cameraAngle = camera.rotation.x;	
@@ -44,12 +44,13 @@ Game = function(canvasId) {
 	player.cellIndex = 0;
 	player.health = 100;
 	player.initiative = 2;
+	player.isPickable = false;
 	addPlayerAbilities();
 
 	// Idle sprite animation.
 	player.playAnimation(0, 2, true, 400);
 
-	// Sprite enemy manager.
+	// Sprite enemy manager. As of now, allocate memory for 1 instance of melee type and 2 instances of ranged type.
 	var spriteManagerEnemyMelee = new BABYLON.SpriteManager('enemyManager', 'assets/characters/cGenericMelee.png', 1, 512, scene);
 	var spriteManagerEnemyRange = new BABYLON.SpriteManager('enemyManager', 'assets/characters/cGenericRange.png', 2, 512, scene);
 	var enemies = [];
@@ -100,22 +101,9 @@ Game = function(canvasId) {
 	textureTask.onSuccess = function(task) {
 		groundMaterial5.emissiveTexture = task.texture;
 		groundMaterials.push(groundMaterial5);
-	}	
+	}			
 
-	var gridMaterial = new BABYLON.GridMaterial('gridMaterial', scene)
-	gridMaterial.majorUnitFrequency = 0;
-	gridMaterial.gridRatio = 2;
-	gridMaterial.opacity = 0.9;
-
-	var parameters = {
-		"width" : 40,
-		"height" : 12,
-		"updatable" : false,
-		"sideOrientation" : BABYLON.Mesh.DEFAULTSIDE
-	};
-
-	// Create a grid that resembles the ground.
-	//var grid = {};
+	// Create a grid that resembles the ground.	
 	var tileSize = 2;
 	var gridHeight = 6 * tileSize;
 	var gridWidth = 20 * tileSize;
@@ -162,16 +150,19 @@ Game = function(canvasId) {
         cachingStrategy: BABYLON.Canvas2D.CACHESTRATEGY_DONTCACHE
     });
 
-    var spriteUI;
-	textureTask = preloader.addTextureTask("image task", "assets_ALT/levels/mountains/interface/0_scaled.png");	
-	textureTask.onSuccess = function(task) {		
+    var spriteUI;   
+	textureTask = preloader.addTextureTask("image task", "assets_ALT/levels/mountains/interface/0.png");	
+	textureTask.onSuccess = function(task) {	
+		// Scale sprite to fit current canvas dimensions.
+		var scaleFactor =  canvas2D.width / task.texture._texture._baseWidth;			
 		task.texture.hasAlpha = true;
 		spriteUI = new BABYLON.Sprite2D(task.texture, 
 		{	
-			parent: canvas2D, id: "spriteUI", x: 0, y: -1, invertY: false, spriteSize: null, 
-			spriteLocation: null
-		});		
-		console.log(task.texture);
+			parent: canvas2D, id: "spriteUI", x: -1, y: -1, invertY: false, spriteSize: null, 
+			spriteLocation: BABYLON.Vector2.Zero(), 
+			scaleX: scaleFactor, scaleY: scaleFactor,			
+			origin: BABYLON.Vector2.Zero()
+		});				
 	}   
 
     // Add frame for the current turn.
@@ -208,7 +199,7 @@ Game = function(canvasId) {
     // Add a skill info bar at the top of the screen.
     var abilityName;
     var infoBar = new BABYLON.Rectangle2D({
-    	id: "infoBar", parent: canvas2D, width: 600, height: 80, x: canvas.width / 2 - 300, y: canvas2D.height - 80,
+    	id: "infoBar", parent: canvas2D, width: 700, height: 80, x: canvas.width / 2 - 350, y: canvas2D.height - 80,
     	fill: "#4040408F", border: "#A040A0D0, #FFFFFF", borderThickness: 5,
     	roundRadius: 10, isVisible: false,
     	children:
@@ -235,6 +226,8 @@ Game = function(canvasId) {
     // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
     skill_1.pointerEventObservable.add(function() {
     	telegraphTiles(player.abilities.player_skill_1.range, player, 1);
+    	infoBar.children[0].text = "Damaging close combat skill that marks an enemy";
+    	infoBar.levelVisible = true;
     }, BABYLON.PrimitivePointerInfo.PointerOver);
 
     // Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
@@ -245,14 +238,16 @@ Game = function(canvasId) {
     			tile.visibility = 1.0;
     			animatable.stop();
     		}
-    	});
-    	infoBar.children[0].text = "Damaging close combat skill that marks an enemy";
-    	infoBar.visibility = true;
+    	});   
+    	if(infoBar.children[0].text == "Damaging close combat skill that marks an enemy")
+    		infoBar.levelVisible = false; 	
     }, BABYLON.PrimitivePointerInfo.PointerLeave);
 
     // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
     skill_2.pointerEventObservable.add(function() {
     	telegraphTiles(player.abilities.player_skill_2.range, player, 2);
+    	infoBar.children[0].text = "Increases enemy marks by 1 for the next 3 turns";
+    	infoBar.levelVisible = true;
     }, BABYLON.PrimitivePointerInfo.PointerOver);
 
 	// Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
@@ -264,12 +259,15 @@ Game = function(canvasId) {
     			animatable.stop();
     		}
     	});
-    	infoBar.visibility = false;
+    	if(infoBar.children[0].text == "Increases enemy marks by 1 for the next 3 turns")
+    		infoBar.levelVisible = false;
     }, BABYLON.PrimitivePointerInfo.PointerLeave);
 
     // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
     skill_3.pointerEventObservable.add(function() {
     	telegraphTiles(player.abilities.player_skill_3.range, player, 3);
+    	infoBar.children[0].text = "Consume 2 marks and stun an enemy for 2 turns";
+    	infoBar.levelVisible = true;
     }, BABYLON.PrimitivePointerInfo.PointerOver);
 
     // Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
@@ -281,11 +279,15 @@ Game = function(canvasId) {
     			animatable.stop();
     		}
     	});
+    	if(infoBar.children[0].text == "Stuns an enemy for 2 turns")
+    		infoBar.levelVisible = false;
     }, BABYLON.PrimitivePointerInfo.PointerLeave);	
 
     // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
     skill_4.pointerEventObservable.add(function() {
     	telegraphTiles(player.abilities.player_skill_4.range, player, 4);
+    	infoBar.children[0].text = "Teleport attack that can reset by killing an enemy"
+    		infoBar.levelVisible = true;
     }, BABYLON.PrimitivePointerInfo.PointerOver);
 
     // Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
@@ -297,11 +299,15 @@ Game = function(canvasId) {
     			animatable.stop();
     		}
     	});
+    	if(infoBar.children[0].text == "Teleport attack that can reset by killing an enemy")
+    		infoBar.levelVisible = false;
     }, BABYLON.PrimitivePointerInfo.PointerLeave);
 
     // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
     skill_1.pointerEventObservable.add(function() {
     	if(player.abilities.player_skill_1.cooldown == 0) {
+    		infoBar.children[0].text = "Press ESC to cancel aiming";
+			infoBar.levelVisible = true;
     		aimSkill = true;
     		player.abilities.player_skill_1.active = true;
 	    	player.abilities.player_skill_1.cooldown = player.abilities.player_skill_1.cost;	    	
@@ -318,6 +324,8 @@ Game = function(canvasId) {
     // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
     skill_2.pointerEventObservable.add(function() {
     	if(player.abilities.player_skill_2.cooldown == 0) {
+    		infoBar.children[0].text = "Press ESC to cancel aiming";
+			infoBar.levelVisible = true;
     		aimSkill = true;
     		player.abilities.player_skill_2.active = true;    		
 	    	player.abilities.player_skill_2.cooldown = player.abilities.player_skill_2.cost;		    	    	
@@ -334,6 +342,8 @@ Game = function(canvasId) {
     // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
     skill_3.pointerEventObservable.add(function() {
     	if(player.abilities.player_skill_3.cooldown == 0) {
+    		infoBar.children[0].text = "Press ESC to cancel aiming";
+			infoBar.levelVisible = true;
     		aimSkill = true;
     		player.abilities.player_skill_3.active = true; 
 	    	player.abilities.player_skill_3.cooldown = player.abilities.player_skill_3.cost;	    	
@@ -350,6 +360,8 @@ Game = function(canvasId) {
     // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
     skill_4.pointerEventObservable.add(function() {
     	if(player.abilities.player_skill_4.cooldown == 0) {
+    		infoBar.children[0].text = "Press ESC to cancel aiming";
+			infoBar.levelVisible = true;
     		aimSkill = true;
     		player.abilities.player_skill_4.active = true; 
 	    	player.abilities.player_skill_4.cooldown = player.abilities.player_skill_4.cost;	    	
@@ -398,7 +410,13 @@ Game = function(canvasId) {
 					}
 			aimSkill = false;	
     	}
-    })
+
+    	else if(evt.keyCode == 80) {
+    		console.log(player.position);
+    		emitParticles(player);
+    		console.log(player.position);
+    	}
+    });
 
 	// Iterate through rows and columns; create tiles for the ground and add respective interaction with the pointer.
 	var tiles = [];
@@ -410,7 +428,7 @@ Game = function(canvasId) {
 			tile.rotation.x = Math.PI / 2;
 			tile.actionManager = new BABYLON.ActionManager(scene);
 			var action = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOverTrigger, tile, "visibility", 0.5, 200);
-			var action2 = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOutTrigger, tile, "visibility", 1.0, 200);
+			var action2 = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOutTrigger, tile, "visibility", 1.0, 300);
 			var action3 = new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnLeftPickTrigger, function(event) {
 
 				// Retrieve the mesh that is currently under the pointer.
@@ -418,7 +436,7 @@ Game = function(canvasId) {
 
 				// This is the pointer click mode that is activated when a skill has been chosen and is now aimed at a tile.
 				if(aimSkill) {
-					
+
 					var abilityId;
 					for(var prop in player.abilities) {
 						if(player.abilities[prop].active == true) {
@@ -426,17 +444,17 @@ Game = function(canvasId) {
 							break;
 						}
 					}
-					useAbility(player, abilityId, tile);
-					// if(enemies.length < 1)
-					// 	allEnemiesCleared = true;
+					useAbility(player, abilityId, tile);				
 				}
 
 				// Second pointer click mode that is the default one. Moves the player to the targeted tile, if in range.
-				else if(playerMovable && playerTurn && !enemyTurn && (Math.abs(player.position.x - tile.position.x) <= tileSize && Math.abs(player.position.z - tile.position.z) <= tileSize)) {	
+				else if(playerMovable && playerTurn && !enemyTurn && (Math.abs(player.position.x - tile.position.x) <= tileSize && Math.abs(player.position.z - tile.position.z) <= tileSize) && !comparePositions(tile.position)) {	
 
 					playerMovable = false;						
 
 					var nextPos = new BABYLON.Vector3(tile.getAbsolutePosition().x, player.position.y, tile.getAbsolutePosition().z);
+
+
 					if(nextPos.x < player.position.x)
 						player.invertU = true;
 					else
@@ -462,11 +480,10 @@ Game = function(canvasId) {
 						currentPositions.set("player", player.position);						
 						
 						player.playAnimation(0, 2, true, 400);
-
-						//var worldMatrix = player.getWorldMatrix();
-						var transformMatrix = scene.getTransformMatrix();
-						var viewport = scene.activeCamera.viewport;
-						var coordinates = BABYLON.Vector3.Project(player.position, BABYLON.Matrix.Identity(), transformMatrix, viewport);
+						
+						// var transformMatrix = scene.getTransformMatrix();
+						// var viewport = scene.activeCamera.viewport;
+						// var coordinates = BABYLON.Vector3.Project(player.position, BABYLON.Matrix.Identity(), transformMatrix, viewport);
 						
 						// if (coordinates.x > 0.8) {
 						// 	playerMovable = false;
@@ -491,6 +508,13 @@ Game = function(canvasId) {
 
 						// actEnemy(boundaries, enemies[currentEnemy]);				
 					});
+				}
+				else if(!(Math.abs(player.position.x - tile.position.x) <= tileSize && Math.abs(player.position.z - tile.position.z) <= tileSize)) {
+					infoBar.children[0].text = "That's too far away!";
+					infoBar.levelVisible = true;
+					setTimeout(function() {
+						infoBar.levelVisible = false;
+					}, 2000);
 				}
 			});
 
@@ -538,7 +562,7 @@ Game = function(canvasId) {
 	textureTask.onSuccess = function (task) {
 		bgMaterial.emissiveTexture = task.texture;
 		bgMaterial.opacityTexture = bgMaterial.emissiveTexture;
-		//bgMaterial.hasAlpha = true;
+		// bgMaterial.hasAlpha = true;
 		//bgMaterial.alpha = 1.0;
 		bgMaterial.emissiveTexture.hasAlpha = true;
 		bgMaterial.useAlphaFromEmissiveTexture = true;
@@ -552,7 +576,7 @@ Game = function(canvasId) {
 	textureTask.onSuccess = function (task) {
 		bgMaterialSmall.emissiveTexture = task.texture;
 		bgMaterialSmall.opacityTexture = bgMaterialSmall.emissiveTexture;
-		bgMaterialSmall.hasAlpha = true;
+		// bgMaterialSmall.hasAlpha = true;
 		bgMaterialSmall.emissiveTexture.hasAlpha = true;
 		bgMaterialSmall.useAlphaFromEmissiveTexture;
 		bgMaterialSmall.emissiveTexture.uOffset = randomUOffset2;
@@ -562,8 +586,8 @@ Game = function(canvasId) {
 	textureTask = preloader.addTextureTask("image task", "assets/levels/mountains/backgrounds/front/2.png");
 	textureTask.onSuccess = function (task) {
 		bgMaterialSmall2.emissiveTexture = task.texture;
-		bgMaterialSmall2.opacityTexture = bgMaterialSmall2.emissiveTexture;
-		bgMaterialSmall2.hasAlpha = true;
+		// bgMaterialSmall2.opacityTexture = bgMaterialSmall2.emissiveTexture;
+		// bgMaterialSmall2.hasAlpha = true;
 		bgMaterialSmall2.emissiveTexture.hasAlpha = true;
 		bgMaterialSmall2.useAlphaFromEmissiveTexture;
 		bgMaterialSmall2.emissiveTexture.uOffset = randomUOffset2;
@@ -572,8 +596,9 @@ Game = function(canvasId) {
 	// Create background plane for sky.
 	var skyPlane = BABYLON.MeshBuilder.CreatePlane('skyPlane', {width: gridWidth * 2.5, height: gridHeight}, scene, false, BABYLON.MeshBuilder.FRONTSIDE);
 	skyPlane.material = skyMaterial;
-	skyPlane.position = new BABYLON.Vector3(gridWidth / 2, -3 , gridHeight + 16 * tileSize);
-	skyPlane.rotation.x = camera.rotation.x;
+	// skyPlane.position = new BABYLON.Vector3(gridWidth / 2, -2.9 , gridHeight + 16 * tileSize);
+	skyPlane.position = new BABYLON.Vector3(gridWidth / 2, -2.9 , gridHeight + 16 * tileSize);
+	skyPlane.rotation.x = cameraAngle;
 
 	// Create front-background plane.
 	var bgPlane = BABYLON.MeshBuilder.CreatePlane('bgPlane', {width: gridWidth * 1.5, height: gridHeight}, scene, false, BABYLON.MeshBuilder.FRONTSIDE);
@@ -582,13 +607,14 @@ Game = function(canvasId) {
 	//var offsetY = bgPlane.height / 2;
 	bgPlane.position = new BABYLON.Vector3(gridWidth / 2 , 3, gridHeight + 2 * tileSize);
 	bgPlane.rotation.x = cameraAngle;	
+	// bgPlane.renderingGroupId = 1;
 
 	// 
 	var bgPlaneSmall = BABYLON.MeshBuilder.CreatePlane('bgPlaneSmall', {width: 2.25 * gridWidth, height: 2 * gridWidth / 8}, scene, false, BABYLON.MeshBuilder.FRONTSIDE);
 	bgPlaneSmall.position = new BABYLON.Vector3(gridWidth / 2 , 0.5, gridHeight + 10 * tileSize);
 	bgPlaneSmall.material = ~~(Math.random() * 2) ? bgMaterialSmall : bgMaterialSmall2;
 	bgPlaneSmall.rotation.x = cameraAngle;
-
+	// bgPlane.renderingGroupId = 1;
 
 	// Debug function to show the 3 axis.
 	var showAxis = function(size) {
@@ -626,7 +652,7 @@ var doOnce = 0;
 
 	// When asset manager has loaded everything, we're ready to render.
 	preloader.onFinish = function (tasks) {
-		// Put the interface sprite at the bottom of Z-ordering, so it doesn't override mounse interaction with the skill set.
+		// Put the interface sprite at the bottom of Z-ordering, so it doesn't override mouse interaction with the skill set.
 		spriteUI.zOrder = 1;
 		// Render loop.
 		engine.runRenderLoop(function() {
@@ -648,7 +674,27 @@ var doOnce = 0;
 
 	// A function that is called when both parties are finished and mechanic parameters must be re-evalued. It prepares for the next round.
 	function roundEndClear() {
-		
+
+		var dangerousTile = scene.getMeshByID('dangerousTile');
+		if(dangerousTile != undefined) {
+			if(dangerousTile.ticksToExplode < 1) {
+				infoBar.children[0].text = "EVERYONE GET IN COVER!";
+				infoBar.levelVisible = true;
+				setTimeout(function() {
+					sound3.play();
+				}, 1200);
+				setTimeout(function() {
+					infoBar.levelVisible = false;
+				}, 3000);
+				if(player.position.x == dangerousTile.position.x && player.position.z == tile.position.z) {
+					player.health -= dangerousTile.damage;
+				}
+				dangerousTile.dispose();
+			}
+			else
+				dangerousTile.ticksToExplode -= 1;
+		}
+					
 		enemies.forEach(function(enemy) {
 
 			// Adjust parameter changes (such as cooldown reduction) for each enemy.
@@ -669,8 +715,7 @@ var doOnce = 0;
 				else {
 					enemy.taggedCounter = 0;
 					enemy.tagged = false;
-				}
-				
+				}				
 			}	
 			// Enemy disabled; can't act.
 			if(enemy.disabled) {
@@ -701,10 +746,10 @@ var doOnce = 0;
 		playerMovable = true;
 	}
 
-	function reloadScene(level) {
+	// A function that loads a new level and resets game parameters.
+	function reloadScene(level) {		
 
-		var groundMaterial0, groundMaterial1, groundMaterial3, groundMaterial4, groundMaterial5;
-
+		// Reset positions.
 		camera.position.y = 14;
 		camera.position.z = -9;
 		camera.position.x = 16;
@@ -714,16 +759,19 @@ var doOnce = 0;
 		player.position.z = 5;
 		// player.cellIndex = 0;
 		player.health = 100;
+
 		for(var ability in player.abilities) {
 			var currentAbility = player.abilities[ability];
 			currentAbility.cooldown = 0;
-		}		
+		}			
 
-		var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 1', 'ranged', new BABYLON.Vector3(19, 1, 5));
+		// Spawn enemies.
+		var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 1', 'ranged', new BABYLON.Vector3(23, 1, 7));
 		var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 2', 'ranged', new BABYLON.Vector3(23, 1, 3));
-		var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(23, 1, 7));
+		var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(19, 1, 5));
 		currentEnemy = enemies.length - 1;
-		
+			
+		// Reset game parameters.			
 		playerTurn = true;
 		playerMovable = true;
 		enemyTurn = false;
@@ -738,10 +786,11 @@ var doOnce = 0;
 		// player.stopAnimation();
 		// player.playAnimation(0, 2, true, 400);
 
-		if(level == 'mountains') {
-			scene.clearColor = new BABYLON.Color3(93 / 255, 93 / 255, 93 / 255);
+		if(level == 'grasslands') {
 
-			textureTask = preloader.addTextureTask('image task', "assets/levels/mountains/backgrounds/front/1.png");
+			scene.clearColor = new BABYLON.Color3(74 / 255, 249 / 255, 68 / 255);
+
+			textureTask = preloader.addTextureTask('image task', "assets/levels/grasslands/backgrounds/front/1.png");
 			textureTask.onSuccess = function (task) {
 				bgMaterial.emissiveTexture.dispose();
 				bgMaterial.emissiveTexture = task.texture;
@@ -752,7 +801,7 @@ var doOnce = 0;
 				bgMaterial.emissiveTexture.uScale = 2.0;
 			}
 
-			textureTask = preloader.addTextureTask("image task", "assets/levels/mountains/backgrounds/front/2.png");
+			textureTask = preloader.addTextureTask("image task", "assets/levels/grasslands/backgrounds/front/2.png");
 			textureTask.onSuccess = function (task) {
 				bgMaterialSmall.emissiveTexture.dispose();
 				bgMaterialSmall.emissiveTexture = task.texture;
@@ -763,7 +812,7 @@ var doOnce = 0;
 				bgMaterialSmall.emissiveTexture.uScale = 2.0;
 			}
 
-			textureTask = preloader.addTextureTask("image task", "assets/levels/mountains/backgrounds/front/0.png");
+			textureTask = preloader.addTextureTask("image task", "assets/levels/grasslands/backgrounds/front/0.png");
 			textureTask.onSuccess = function (task) {
 				bgMaterialSmall2.emissiveTexture.dispose();
 				bgMaterialSmall2.emissiveTexture = task.texture;
@@ -772,11 +821,9 @@ var doOnce = 0;
 				bgMaterialSmall2.emissiveTexture.hasAlpha = true;
 				bgMaterialSmall2.useAlphaFromEmissiveTexture;
 				bgMaterialSmall2.emissiveTexture.uScale = 2.0;
-
-				bgPlaneSmall.setEnabled(false);
 			}			
 
-			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround0.png");
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant0_128.png");
 			textureTask.onSuccess = function (task) {
 				groundMaterial0.emissiveTexture.dispose();
 				groundMaterial0.emissiveTexture = task.texture;
@@ -784,7 +831,7 @@ var doOnce = 0;
 				// groundMaterials[0].emissiveTexture = task.texture;
 			}
 
-			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround1.png");
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant1_128.png");
 			textureTask.onSuccess = function (task) {
 				groundMaterial1.emissiveTexture.dispose();
 				groundMaterial1.emissiveTexture = task.texture;
@@ -792,7 +839,7 @@ var doOnce = 0;
 				// groundMaterials[1].emissiveTexture = task.texture;
 			}
 
-			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround2.png");
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant2_128.png");
 			textureTask.onSuccess = function (task) {
 				groundMaterial2.emissiveTexture.dispose();
 				groundMaterial2.emissiveTexture = task.texture;
@@ -800,7 +847,7 @@ var doOnce = 0;
 				// groundMaterials[2].emissiveTexture = task.texture;
 			}
 
-			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround3.png");
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant3_128.png");
 			textureTask.onSuccess = function (task) {
 				groundMaterial3.emissiveTexture.dispose();
 				groundMaterial3.emissiveTexture = task.texture;
@@ -808,7 +855,7 @@ var doOnce = 0;
 				// groundMaterials[3].emissiveTexture = task.texture;
 			}
 
-			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround4.png");
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant4_128.png");
 			textureTask.onSuccess = function (task) {
 				groundMaterial4.emissiveTexture.dispose();
 				groundMaterial4.emissiveTexture = task.texture;
@@ -816,7 +863,7 @@ var doOnce = 0;
 				// groundMaterials[4].emissiveTexture = task.texture;
 			}
 
-			textureTask = preloader.addTextureTask('image task', "assets/tiles/mountains/TilesMountainGround5.png");
+			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant0_128.png");
 			textureTask.onSuccess = function (task) {
 				//groundMaterial5.emissiveTexture.dispose();
 				groundMaterial5.emissiveTexture = task.texture;
@@ -826,7 +873,7 @@ var doOnce = 0;
 
 			for(var j = 0; j < tiles.length; j++) {
 
-				var randomNumber = Math.floor(Math.random() * 6);
+				var randomNumber = Math.floor(Math.random() * 5);
 				if (randomNumber == 0)
 					tiles[j].material = groundMaterial0;
 				else if (randomNumber == 1)
@@ -835,12 +882,9 @@ var doOnce = 0;
 					tiles[j].material = groundMaterial2;
 				else if (randomNumber == 3)
 					tiles[j].material = groundMaterial3;
-				else if (randomNumber == 4)
-					tiles[j].material = groundMaterial4;
-				else
-					tiles[j].material = groundMaterial5;
+				else 
+					tiles[j].material = groundMaterial4;				
 			}
-
 		}
 		preloader.load();
 	}
@@ -864,8 +908,9 @@ var doOnce = 0;
 		enemyDummy.disabledCounter = 0;
 		enemyDummy.tagged = false;
 		enemyDummy.taggedCounter = 0;
+		enemyDummy.isPickable = false;
 
-		// Distinguish between types and add prpoperties accordingly.
+		// Distinguish between types and add properties accordingly.
 		enemyDummy.type = enemyType;
 		if(enemyDummy.type == 'ranged') {
 			enemyDummy.health = 10;
@@ -878,10 +923,10 @@ var doOnce = 0;
 					damage : 5
 				},
 				'ranged_special_attack' : {
-					range : 2,
+					range : 3,
 					cooldown : 0,
 					cost : 5,
-					damage : 0
+					damage : 10
 				}
 			}
 		}
@@ -899,7 +944,7 @@ var doOnce = 0;
 					range : 1,
 					cooldown : 0,
 					cost : 3,
-					damage : 0
+					damage : 12
 				}
 			}
 		}
@@ -1028,10 +1073,18 @@ var doOnce = 0;
 	// A function that moves an enemy unit.
 	function actEnemy(boundaries, enemy) {
 
+		// Check if the enemy is unable to act, then select next enemy, unless he's the last in line to act. 
 		if(enemy.disabled /*|| !checkInitiative(enemy)*/) {
-			console.log('hi');
-			actEnemy(boundaries, enemies[--currentEnemy]);
-			return;
+			infoBar.children[0].text = enemy.name + " still stunned!";
+			infoBar.levelVisible = true;
+			setTimeout(function(){
+				infoBar.levelVisible = false;
+				if(currentEnemy >= 1) 
+					actEnemy(boundaries, enemies[--currentEnemy]);
+				else 
+					enemyTurn = false;
+				return;
+			}, 3000);			
 		}
 		
 		var minDistanceToPlayer = enemy.type == 'ranged' ? 2 * tileSize : tileSize;		
@@ -1141,10 +1194,10 @@ var doOnce = 0;
 			currentPositions.set(enemy.name, nextPos);				
 
 			// Adjust facing direction towards player.
-			if(enemy.position.x > nextPos.x) 
-				enemy.invertU = true;
-			else
+			if(enemy.position.x > player.position.x) 
 				enemy.invertU = false;
+			else
+				enemy.invertU = true;
 
 			// Change position of marks and make marks visible again.
 			if(hideMarks) {
@@ -1155,7 +1208,12 @@ var doOnce = 0;
 			}			
 
 			// When in range, attack player.
-			var attackType = enemy.type == 'ranged' ? 'ranged_default_attack' : 'melee_default_attack';				
+			var attackType;		
+			if(enemy.type == 'melee') 
+				attackType = enemy.abilities['melee_special_attack'].cooldown == 0 ? 'melee_special_attack' : 'melee_default_attack';
+			else if(enemy.type == 'ranged')		
+				attackType = enemy.abilities['ranged_special_attack'].cooldown == 0 ? 'ranged_special_attack' : 'ranged_default_attack';
+
 			if(BABYLON.Vector3.DistanceSquared(player.position, nextPos) >= Math.pow(minDistanceToPlayer, 2) && BABYLON.Vector3.DistanceSquared(player.position, nextPos) <= 2 * Math.pow(minDistanceToPlayer, 2)) 				
 				useAbility(enemy, attackType);
 			
@@ -1163,12 +1221,12 @@ var doOnce = 0;
 			currentEnemy--;
 			while(enemies[currentEnemy.disabled] /*|| !checkInitiative(enemies[currentEnemy])*/){
 				currentEnemy--;	
-			}				
+			}			
+			// Act with next enemy after a short delay.	
 			if(currentEnemy >= 0) {
 				setTimeout(function() {
 					actEnemy(boundaries, enemies[currentEnemy]);
-				}, 1500);
-				// actEnemy(boundaries, enemies[currentEnemy]);
+				}, 1500);				
 			}
 			// When every enemy has acted, end round.
 			else
@@ -1180,6 +1238,7 @@ var doOnce = 0;
 		return new Promise((resolve) => setTimeout(resolve, time));
 	}
 
+	// Use ability of player or enemy.
 	function useAbility(unit, ability, tile, targetLocation) {	
 
 		if(unit.name == 'player') {
@@ -1214,37 +1273,58 @@ var doOnce = 0;
 			if(distanceX <= range && distanceZ <= range) {
 					
 				for(var j = 0; j < enemies.length; j++) {
+
 					var enemy = enemies[j];
-					if(tile.position.x == enemies[j].position.x && tile.position.z == enemies[j].position.z) {		
+					if(tile.position.x == enemy.position.x && tile.position.z == enemy.position.z) {		
 
 						// Display current ability used, onto which enemy.
-						infoBar.children[0].text = "Player using " + textPiece + "\n\t on enemy " + enemies[j].name + " !";
+						infoBar.children[0].text = "Player using " + textPiece + "\n\t on enemy " + enemy.name + " !";
 						infoBar.levelVisible = true;						
 						
 						// Some abilities need further damage calculation and/or implementation of special effects, such as stun.
 						var damage = player.abilities[ability].damage;
+
 						if(ability == 'player_skill_4') {
 
-							// Simulate a kind of "teleportation" move behind the enemy.
-							var skill_4_animation = new BABYLON.Animation("skill_4_animation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
-							var keys = [];
-							keys.push({frame: 0, value: player.position});							
-							keys.push({frame: 100, value: new BABYLON.Vector3(enemy.position.x + tileSize, 1, enemy.position.z)});	
-							skill_4_animation.setKeys(keys);
-							var event1 = new BABYLON.AnimationEvent(0, function() {								
-								 player.color = new BABYLON.Color4(0.0, 0.0, 0.0, 0.0);
-							});
-							var event2 = new BABYLON.AnimationEvent(100, function() {								
-								 player.color = new BABYLON.Color4(1.0, 1.0, 1.0, 1.0);
-							});
-							skill_4_animation.addEvent(event1);
-							skill_4_animation.addEvent(event2);
-							player.animations.push(skill_4_animation);
+							// // Simulate a kind of "teleportation" move behind the enemy.
+							// var skill_4_animation = new BABYLON.Animation("skill_4_animation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+							// var keys = [];
+							// keys.push({frame: 0, value: player.position});							
+							// keys.push({frame: 100, value: new BABYLON.Vector3(enemy.position.x + tileSize, 1, enemy.position.z)});	
+							// skill_4_animation.setKeys(keys);
+							// var event1 = new BABYLON.AnimationEvent(0, function() {								
+							// 	 player.color = new BABYLON.Color4(0.0, 0.0, 0.0, 0.0);
+							// });
+							// var event2 = new BABYLON.AnimationEvent(100, function() {								
+							// 	 player.color = new BABYLON.Color4(1.0, 1.0, 1.0, 1.0);
+							// });
+							// skill_4_animation.addEvent(event1);
+							// skill_4_animation.addEvent(event2);
+							// player.animations.push(skill_4_animation);
 
-							scene.beginAnimation(player, 0, 100, false, 1.0, function() {
-								sound2.play();
+							// scene.beginAnimation(player, 0, 100, false, 1.0, function() {
+							// 	sound2.play();
+							// 	currentPositions.set("player", player.position);
+							// });			
+
+							// Invoke a particle system that simulates a teleportation move if the player.
+							player.color = new BABYLON.Color4(0.0, 0.0, 0.0, 0.0);
+							var particleSkillAnimation = emitParticles(tile);
+							particleSkillAnimation.start();	
+							// Let the player reappear when the particle system 'animation' has approximately finished. 
+							setTimeout(function() {
+								particleSkillAnimation.stop();
+								player.position.x = enemy.position.x + tileSize;
+								player.position.z = enemy.position.z;
 								currentPositions.set("player", player.position);
-							});							
+								// Make the player turn to the back of his enemy.
+								if(player.position.x > enemy.position.x)
+									player.invertU = true;
+								else
+									player.invertU = false;
+								player.color = new BABYLON.Color4(1.0, 1.0, 1.0, 1.0);
+							}, 1750);
+
 							// Damage increased by 100% per mark. Consumes marks.
 							damage += damage * enemy.marks;	
 							enemy.marks = 0;					
@@ -1269,20 +1349,20 @@ var doOnce = 0;
 						checkMarks(enemy);
 
 						// Calculate new enemy health.
-						if(enemies[j].health > 0){
-							enemies[j].health -= damage;
+						if(enemy.health > 0){
+							enemy.health -= damage;
 						}
 
 						// Update enemy health display.
 						switch(enemies[j].name) {
 							case 'Scrapper':										
-								hpFrame.children[4].text = enemies[j].health.toString();
+								hpFrame.children[4].text = enemy.health.toString();
 								break;
 							case 'Marksman 1':
-								hpFrame.children[6].text = enemies[j].health.toString();
+								hpFrame.children[6].text = enemy.health.toString();
 								break;
 							case 'Marksman 2':
-								hpFrame.children[8].text = enemies[j].health.toString();
+								hpFrame.children[8].text = enemy.health.toString();
 								break;
 						}
 						setTimeout(function() {
@@ -1336,13 +1416,13 @@ var doOnce = 0;
 			aimSkill = false;			
 			player.abilities[ability].active = false;	
 
-			// Now that a player action has been used, it's the enemy's turn.
+			// Now that a player action has been used, it's the enemy's turn. Change level if all enemies are dead instead.
 			if(enemies.length < 1) {
 				infoBar.children[0].text = "Level completed!";
 				infoBar.levelVisible = true;
 				setTimeout(function() {
 					infoBar.levelVisible = false;
-					reloadScene('mountains');
+					reloadScene('grasslands');
 					return;
 				}, 3000);
 			}
@@ -1375,7 +1455,9 @@ var doOnce = 0;
 					animateTileVisibility(tile, 30, 0.4);
 					infoBar.children[0].text = "Enemy using " + textPiece + " on the Player!";
 					infoBar.levelVisible = true;
-					setTimeout(function() {						
+					setTimeout(function() {		
+						if(ability == 'melee_special_attack')
+							addDangerTile(tile);				
 						scene.stopAnimation(tile);
 						tile.visibility = 1.0;
 						infoBar.levelVisible = false;
@@ -1433,50 +1515,123 @@ var doOnce = 0;
 	}
 
 	// A function that is used to generate a particle effect that origins from a certain object.
-	function emitParticles(targetObject) {
+	function emitParticles(targetLocation) {
 
-		var origin = BABYLON.Mesh.CreateBox("particlesOrigin", 0.1, scene);
-		origin.position = targetObject.position;
-		origin.isVisible = false;
+		// Vector variable that will be used for the fountain displacement.
+		var targetPos = new BABYLON.Vector3(0, 0, 0);
+		targetPos.copyFrom(targetLocation.position);
+		
+		// Origin of the particle system.
+		var fountain = BABYLON.Mesh.CreateBox("particlesOrigin", 0.1, scene);
+		fountain.position = new BABYLON.Vector3(9, 1, 5);
+		fountain.isVisible = false;
 
-		var particleSystem = new BABYLON.ParticleSystem("particleSystem", 2000, scene);
-
+		// Amount and texture of particles.
+		var particleSystem = new BABYLON.ParticleSystem("particleSystem", 1000, scene);
 		particleSystem.particleTexture = new BABYLON.Texture("assets/particles/flare.png", scene);
 
-		particleSystem.emitter = origin;
-		particleSystem.minEmitBox = new BABYLON.Vector3(-1, 0, 0);
-		particleSystem.maxEmitBox = new BABYLON.Vector3(1, 0, 0);
+		// Origin of the particle emittion.
+		particleSystem.emitter = fountain;
+		particleSystem.minEmitBox = new BABYLON.Vector3(0, 0, 0);
+		particleSystem.maxEmitBox = new BABYLON.Vector3(0, 0, 0);
 
-		particleSystem.color1 = new BABYLON.Color4(0.7, 0.8, 1.0, 1.0);
-	    particleSystem.color2 = new BABYLON.Color4(0.2, 0.5, 1.0, 1.0);
-	    particleSystem.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+		// Color stages of the particles.
+		particleSystem.color1 = new BABYLON.Color4(0.9, 0.4, 0.2, 1.0);
+	    particleSystem.color2 = new BABYLON.Color4(1.0, 0.5, 0.5, 1.0);
+	    particleSystem.colorDead = new BABYLON.Color4(0.0, 0.0, 0.0, 0.0);
 
-		particleSystem.minSize = 0.1;
-		particleSystem.maxSize = 0.5;
+	    // Min and max of the particle size (random in between).
+		particleSystem.minSize = 0.3;
+		particleSystem.maxSize = 1.3;
 
-		particleSystem.minLifeTime = 0.3;
-		particleSystem.maxLifeTime = 1.5;
+		// Min and max life time of the particles (random in between).
+		particleSystem.minLifeTime = 1.0;
+		particleSystem.maxLifeTime = 2.0;
 
-		particleSystem.emitRate = 1500;
+		// Emittion rate of the particles.
+		particleSystem.emitRate = 1000;
 
+		// Blend mode of the particles.
 		particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
 
-		particleSystem.gravity = new BABYLON.Vector3(0, -9.81, 0);
+		// No nedd for default gravity.
+		particleSystem.gravity = new BABYLON.Vector3(0, 0, 0);
 
-		particleSystem.direction1 = new BABYLON.Vector3(-7, 8, 3);
-		particleSystem.direction2 = new BABYLON.Vector3(7, 8, -3);
+		// Possible starting directions of the particle movement (random in between).
+		particleSystem.direction1 = new BABYLON.Vector3(-2.5, 3, -1);
+		particleSystem.direction2 = new BABYLON.Vector3(2.5, -1, 1);
 
+		// Min and max angular speed of the particles (random in between).
 		particleSystem.minAngularSpeed = 0;
 		particleSystem.maxAngularSpeed = Math.PI;
 
-		particleSystem.minEmitPower = 1;
-		particleSystem.maxEmitPower = 3;
-		particleSystem.updateSpeed = 0.005;
+		// Min and max emittion power of the particle movement (random in between). 
+		// Update speed that determines the update rate of the particle movement.
+		particleSystem.minEmitPower = 3;
+		particleSystem.maxEmitPower = 5;
+		particleSystem.updateSpeed = 0.025;
 
+		// Time the particle system is running. Disposed on stop.
+		particleSystem.targetStopDuration = 2.0;
 		particleSystem.disposeOnStop = true;
 
-		particleSystem.start();
+		// Draw particles in front of the (alpha-tested) background.
+		particleSystem.renderingGroupId = 1;
+		particleSystem.updateFunction = updateParticles;		
 
+		// Move the fountain when needed.
+		var isMoving = false;
+		function startMoving(targetMesh) {
+
+			if(!isMoving) {
+				isMoving = true;
+				targetMesh.position = targetPos;	
+			}
+		}
+
+		// Function to manually calculate the particle behavior.
+		function updateParticles(particles) {
+
+			for (var i = 0; i < particles.length; i++) {
+
+				var particle = particles[i];
+				particle.age += this._scaledUpdateSpeed;
+
+				if(particle.age >= particle.lifeTime / 1.75) {
+					// Place the fountain at the aimed tile, specifically right next to it. 
+					if(!isMoving) 
+						startMoving(fountain);
+					var directionLength = particle.direction.length();
+					var newDirection = this.emitter.position.subtract(particle.position);
+					particle.direction = newDirection.scale(3);
+					startMoving(fountain);
+				}
+				// Stock particles when they've exceeded lifetime.
+				if(particle.age >= particle.lifetime) {
+					particles.splice(index, 1);
+					this._stockParticles.push(particle);
+					index--;
+					continue;
+				} 
+				// Alter the movement and its direction of the particles when they're still alive.
+				else {
+					particle.colorStep.scaleToRef(this._scaledUpdateSpeed, this._scaledColorStep);
+					particle.color.addInPlace(this._scaledColorStep);
+
+					if(particle.color.a < 0) 
+						particle.color.a = 0;
+
+					particle.angle += particle.angularSpeed * this._scaledUpdateSpeed;
+
+					particle.direction.scaleToRef(this._scaledUpdateSpeed, this._scaledDirection);
+					particle.position.addInPlace(this._scaledDirection);
+
+					this.gravity.scaleToRef(this._scaledUpdateSpeed, this._scaledGravity);
+					particle.direction.addInPlace(this._scaledGravity);
+				}
+			}
+		}
+		return particleSystem;
 	}
 
 	// A function that gives a range/area-of-effect preview of a given skill when the cursor is hovered above the skill name in the skill frame.
@@ -1546,7 +1701,7 @@ var doOnce = 0;
 		var keys = [];
 		keys.push({
 			frame: 0,
-			value: 1
+			value: tile.visibility
 		});
 		keys.push({
 			frame: endFrame,
@@ -1574,15 +1729,36 @@ var doOnce = 0;
 		tile.animations.push(animationTile);
 		scene.beginAnimation(tile, 0, endFrame, true);
 	}
-};
 
-function checkInitiative(unit) {
+	function checkInitiative(unit) {
 	console('inside');
 	if(tick % unit.initiative == 0) 
 		return true;
 	else
 		return false;
-}
+	}
+
+	// Telegraph dangerous tile from enemy melee unit's special attack.
+	function addDangerTile(tile) {
+		
+		var dangerousTile = BABYLON.Mesh.CreatePlane('dangerousTile', tileSize, scene);
+		dangerousTile.position = new BABYLON.Vector3(tile.position.x, .01, tile.position.z);
+		dangerousTile.visibility = 0.4;	
+		dangerousTile.rotation.x = Math.PI / 2;
+		dangerousTile.ticksToExplode = 1;
+		dangerousTile.damage = 50;
+
+		var material = new BABYLON.StandardMaterial("dangerousMaterial", scene);
+		material.emissiveColor = new BABYLON.Color3(1, 0, 0);
+		dangerousTile.material = material;		
+		
+		animateTileVisibility(dangerousTile, 45, 0.1);
+	}
+
+	function addHealthBar(unit) {
+
+	}
+};
 
 document.addEventListener("DOMContentLoaded", function () {
 	new Game('renderCanvas');
