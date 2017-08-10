@@ -552,7 +552,7 @@ Game = function(canvasId) {
 	textureTask = preloader.addTextureTask("image task", "assets/levels/mountains/backgrounds/back/0.png");
 	textureTask.onSuccess = function (task) {
 		skyMaterial.emissiveTexture = task.texture;
-		//skyMaterial.opacityTexture = skyMaterial.emissiveTexture;
+		// skyMaterial.opacityTexture = skyMaterial.emissiveTexture;
 		skyMaterial.emissiveTexture.uScale = 2.0;
 	}
 
@@ -586,7 +586,7 @@ Game = function(canvasId) {
 	textureTask = preloader.addTextureTask("image task", "assets/levels/mountains/backgrounds/front/2.png");
 	textureTask.onSuccess = function (task) {
 		bgMaterialSmall2.emissiveTexture = task.texture;
-		// bgMaterialSmall2.opacityTexture = bgMaterialSmall2.emissiveTexture;
+		bgMaterialSmall2.opacityTexture = bgMaterialSmall2.emissiveTexture;
 		// bgMaterialSmall2.hasAlpha = true;
 		bgMaterialSmall2.emissiveTexture.hasAlpha = true;
 		bgMaterialSmall2.useAlphaFromEmissiveTexture;
