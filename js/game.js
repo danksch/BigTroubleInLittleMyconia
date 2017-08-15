@@ -9,7 +9,7 @@ Game = function(canvasId) {
 	var preloader = new BABYLON.AssetsManager(scene);
 
 	// Load sound files via asset manager.
-	var sound1, sound2, sound3, sound4;
+	var sound1, sound2, sound3, sound4, sound5, sound6, sound7, sound8;
 	var binaryTask = preloader.addBinaryFileTask("sound_1", "assets/sounds/blade.aac");
 	binaryTask.onSuccess = function (task) {		
 		sound1 = new BABYLON.Sound("sound_1", task.data, scene);		
@@ -1397,12 +1397,21 @@ Game = function(canvasId) {
 							player.color = new BABYLON.Color4(0.0, 0.0, 0.0, 0.0);
 							var particleSkillAnimation = emitParticles(tile);
 							particleSkillAnimation.start();	
+
 							// Let the player reappear when the particle system 'animation' has approximately finished. 
 							setTimeout(function() {
+
 								particleSkillAnimation.stop();
 								player.position.x = enemy.position.x + tileSize;
 								player.position.z = enemy.position.z;
 								currentPositions.set("player", player.position);
+
+								// Move hp bar with the player.
+								var targetVector = new BABYLON.Vector3(player.position.x - 1, player.position.y + 1.5, player.position.z);
+								var projection = BABYLON.Vector3.Project(targetVector, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+								player.hpRect.x = projection.x;
+								player.hpRect.y = engine.getRenderHeight() - projection.y;
+
 								// Make the player turn to the back of his enemy.
 								if(player.position.x > enemy.position.x)
 									player.invertU = true;
