@@ -21,46 +21,51 @@ Game = function(canvasId) {
 	var binaryTask3 = preloader.addBinaryFileTask("sound_3", "assets/sounds/explosion.aac");
 	binaryTask3.onSuccess = function (task) {
 		sound3 = new BABYLON.Sound("sound_3", task.data, scene);
-	};
+	};	
 	
 	// Set up camera.
 	var camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3.Zero(), scene);
 	camera.position.y = 14; // 14 before
 	camera.position.z = -9; // -9 before
-	camera.position.x = 16;		
+	camera.position.x = 18;		
 	camera.rotation.x = 0.61; // 61 before
 	//camera.attachControl(canvas, false);
 	camera.fov = 0.8;
 	// Store camera alpha angle that will be applied to background image plane.
-	var cameraAngle = camera.rotation.x;	
+	var cameraAngle = camera.rotation.x;		
 
 	// Sprite player manager and player parameters.
 	var spriteManagerPlayer = new BABYLON.SpriteManager('playerManager', 'assets/characters/cProtagonist.png', 1, 512, scene);
 	var player = new BABYLON.Sprite('player', spriteManagerPlayer);
 	player.size = 2.5;
 	player.position.y = 1;
-	player.position.x = 9;
+	player.position.x = 11;
 	player.position.z = 5;
 	player.cellIndex = 0;
 	player.health = 100;
+	player.maxHealth = 100;
 	player.initiative = 2;
-	player.isPickable = false;
+	player.isPickable = false;	
 	addPlayerAbilities();
-
+	
 	// Idle sprite animation.
 	player.playAnimation(0, 2, true, 400);
 
 	// Sprite enemy manager. As of now, allocate memory for 1 instance of melee type and 2 instances of ranged type.
 	var spriteManagerEnemyMelee = new BABYLON.SpriteManager('enemyManager', 'assets/characters/cGenericMelee.png', 1, 512, scene);
 	var spriteManagerEnemyRange = new BABYLON.SpriteManager('enemyManager', 'assets/characters/cGenericRange.png', 2, 512, scene);
-	var enemies = [];
+	var enemies = [];	
 
-	// Load sprite for displaying enemy marks.
-	var spriteManagerMark = new BABYLON.SpriteManager('markManager', 'img/mark.png', 12, 64, scene);
-
-	// Load different textures.
+	// Load different textures. /* HINT: Adding texture tasks in a loop won't work, because at runtime the loop-index reference doesn't exist anymore. */
 	var groundMaterials = [];
 	var textureTask;
+	var particleTexture;	
+
+	textureTask = preloader.addTextureTask("image task", "assets/particles/flare.png");
+	textureTask.onSuccess = function (task) {
+		particleTexture = task.texture;
+	};	
+
 	var groundMaterial0 = new BABYLON.StandardMaterial("Grass0", scene);
 	textureTask = preloader.addTextureTask("image task", "assets/tiles/mountains/TilesMountainGround0.png");
 	textureTask.onSuccess = function(task) {
@@ -101,7 +106,7 @@ Game = function(canvasId) {
 	textureTask.onSuccess = function(task) {
 		groundMaterial5.emissiveTexture = task.texture;
 		groundMaterials.push(groundMaterial5);
-	}			
+	}	
 
 	// Create a grid that resembles the ground.	
 	var tileSize = 2;
@@ -128,21 +133,16 @@ Game = function(canvasId) {
 	var playerMovable = true;
 	scene.actionManager = new BABYLON.ActionManager(scene);
 
-	// Turn controls.
+	// Turn controls.	
 	var playerTurn = true;
 	var enemyTurn = false;	
 	var turnNumber = 1;		
 	var tick = 1;
 	var aimSkill = false;
+	var hoverInterface = false;
 	var currentPositions = new Map();
 	currentPositions.set("player", player.position);	
 
-	// Spawn enemies.
-	var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 1', 'ranged', new BABYLON.Vector3(23, 1, 7));
-	var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 2', 'ranged', new BABYLON.Vector3(23, 1, 3));
-	var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(19, 1, 5));
-	var currentEnemy = enemies.length - 1;
-	
 	// 2D canvas that is used to display various ingame info.
 	var canvas2D = new BABYLON.ScreenSpaceCanvas2D(scene, {
         id: "ScreenCanvas",
@@ -150,26 +150,117 @@ Game = function(canvasId) {
         cachingStrategy: BABYLON.Canvas2D.CACHESTRATEGY_DONTCACHE
     });
 
-    var spriteUI;   
+	// Spawn enemies.
+	var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 1', 'ranged', new BABYLON.Vector3(25, 1, 7));
+	var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 2', 'ranged', new BABYLON.Vector3(25, 1, 3));
+	var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(21, 1, 5));
+	var currentEnemy = enemies.length - 1;	
+   
+  	// Rect for player hp bar.
+	player.hpRect = new BABYLON.Rectangle2D({
+		id: "hpRect", parent: canvas2D, x: 0, y: 0, width: canvas2D.width / 11, height: 20,
+		fill: "#494C99A0", border: "#FF0000FF, #FF0000AF", borderThickness: 3, roundRadius: 2, isPickable: false, isVisible: true,
+		children: 
+		[
+			new BABYLON.Rectangle2D(
+			{
+				id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 11 - 2, height: 17, fill: "#CF041CFF", roundRadius: 0
+			}),
+			new BABYLON.Text2D("100/100", {id: "playerHPtext", fontName: "10pt Verdana", fontSuperSample: true, fontSignedDistanceField: true, marginAlignment: "h: right, v: center", marginRight: 1})
+		]
+	});
+
+    var spriteUImain;   
 	textureTask = preloader.addTextureTask("image task", "assets_ALT/levels/mountains/interface/0.png");	
 	textureTask.onSuccess = function(task) {	
 		// Scale sprite to fit current canvas dimensions.
 		var scaleFactor =  canvas2D.width / task.texture._texture._baseWidth;			
 		task.texture.hasAlpha = true;
-		spriteUI = new BABYLON.Sprite2D(task.texture, 
+		spriteUImain = new BABYLON.Sprite2D(task.texture, 
 		{	
-			parent: canvas2D, id: "spriteUI", x: -1, y: -1, invertY: false, spriteSize: null, 
+			parent: canvas2D, id: "spriteUImain", x: -1, y: -1, invertY: false, spriteSize: null, 
 			spriteLocation: BABYLON.Vector2.Zero(), 
 			scaleX: scaleFactor, scaleY: scaleFactor,			
-			origin: BABYLON.Vector2.Zero()
+			origin: BABYLON.Vector2.Zero(),
+			isPickable: false
 		});				
-	}   
+	} 
+
+	var spriteUIquestionMark;
+	textureTask = preloader.addTextureTask("image task", "img/question_mark.png");
+	textureTask.onSuccess = function(task) {
+		task.texture.hasAlpha = true;
+		spriteUIquestionMark = new BABYLON.Sprite2D(task.texture,
+		{
+			parent: canvas2D, id: "spriteUIquestionMark", x: canvas2D.width - task.texture._texture._baseWidth, y: canvas2D.height - task.texture._texture._baseHeight, invertY: false, spriteSize: null,
+			spriteLocation: BABYLON.Vector2.Zero(),
+			origin: BABYLON.Vector2.Zero(),
+			scaleX: 1, scaleY: 1,
+			isVisible: false		
+		});
+	}
+
+	var sprite_skill_icon_1;
+	textureTask = preloader.addTextureTask("image task", "img/skill_icon_1.png");
+	textureTask.onSuccess = function(task) {
+		task.texture.hasAlpha = true;
+		var scaleFactor = 0.3;
+		sprite_skill_icon_1 = new BABYLON.Sprite2D(task.texture,
+		{
+			parent: canvas2D, id: "spriteSkillIcon1", x: canvas2D.width * (1 / 60), y: canvas2D.height* (3 / 40), invertY: false, spriteSize: null,
+			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
+			isVisible: true, isPickable: true,
+			scaleX: scaleFactor, scaleY: scaleFactor
+		});
+	}
+
+	var sprite_skill_icon_2;
+	textureTask = preloader.addTextureTask("image task", "img/skill_icon_3.png");
+	textureTask.onSuccess = function(task) {
+		task.texture.hasAlpha = true;
+		var scaleFactor = 0.3;
+		sprite_skill_icon_2 = new BABYLON.Sprite2D(task.texture,
+		{
+			parent: canvas2D, id: "spriteSkillIcon1", x: canvas2D.width * (5.25 / 60), y: canvas2D.height * (1 / 40), invertY: false, spriteSize: null,
+			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
+			isVisible: true, isPickable: true,
+			scaleX: scaleFactor, scaleY: scaleFactor
+		});
+	}
+
+	var sprite_skill_icon_3;
+	textureTask = preloader.addTextureTask("image task", "img/skill_icon_2.png");
+	textureTask.onSuccess = function(task) {
+		task.texture.hasAlpha = true;
+		var scaleFactor = 0.3;
+		sprite_skill_icon_3 = new BABYLON.Sprite2D(task.texture,
+		{
+			parent: canvas2D, id: "spriteSkillIcon1", x: canvas2D.width * (11 / 60), y: canvas2D.height * (1.75 / 40), invertY: false, spriteSize: null,
+			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
+			isVisible: true, isPickable: true,
+			scaleX: scaleFactor, scaleY: scaleFactor
+		});
+	}
+
+	var sprite_skill_icon_4;
+	textureTask = preloader.addTextureTask("image task", "img/skill_icon_4.png");
+	textureTask.onSuccess = function(task) {
+		task.texture.hasAlpha = true;
+		var scaleFactor = 0.3;
+		sprite_skill_icon_4 = new BABYLON.Sprite2D(task.texture,
+		{
+			parent: canvas2D, id: "spriteSkillIcon1", x: canvas2D.width * (15.25 / 60), y: canvas2D.height * (1 / 40), invertY: false, spriteSize: null,
+			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
+			isVisible: true, isPickable: true,
+			scaleX: scaleFactor, scaleY: scaleFactor
+		});
+	}
 
     // Add frame for the current turn.
     var turnFrame = new BABYLON.Rectangle2D({
     	id: "rectTopLeft", parent: canvas2D, width: 200, height: 100, x: 0, y: canvas2D.height - 100,
     	fill: "#4040408F", border: "#A040A0D0, #FFFFFF", borderThickness: 5,
-    	roundRadius: 10, isVisible: true,
+    	roundRadius: 10, isVisible: true, isPickable: false,
     	children:
     	[
     		new BABYLON.Text2D("Current Turn:", { id: "turnTextTitle", fontName: "20pt Arial", marginAlignment: "h: center, v: top", marginTop: 5 }),
@@ -181,7 +272,7 @@ Game = function(canvasId) {
     var hpFrame = new BABYLON.Rectangle2D({
     	id: "rectTopRight", parent: canvas2D, width: 300, height: 200, x: canvas2D.width - 300, y: canvas2D.height - 250,
     	fill: "#4040408F", border: "#A040A0D0, #FFFFFF", borderThickness: 5,
-    	roundRadius: 10, isVisible: true,
+    	roundRadius: 10, isVisible: false,
     	children:
     	[
     	new BABYLON.Text2D("Hit Points", { id: "hpTitle", fontName: "20pt Arial", marginAlignment: "h: center, v:top", marginTop: 5 }),
@@ -213,7 +304,7 @@ Game = function(canvasId) {
     var skillsFrame = new BABYLON.Rectangle2D({
     	id: "rectBottom", parent: canvas2D, width: 500, height: 300, x: 0, y: canvas2D.height - 450,
     	fill: "#4040408F", border: "#A040A0D0, #FFFFFF", borderThickness: 5,
-    	roundRadius: 10, isVisible: true
+    	roundRadius: 10, isVisible: false, isPickable: false
     });
 
     // Add content to the frame.
@@ -221,159 +312,7 @@ Game = function(canvasId) {
     var skill_1 = new BABYLON.Text2D("Dimensional Stab", {parent: skillsFrame, id: "attack_1", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 50, marginLeft: 10 });
     var skill_2 = new BABYLON.Text2D("Intensyfing Mark", {parent: skillsFrame, id: "attack_2", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 90, marginLeft: 10 });
     var skill_3 = new BABYLON.Text2D("Shatter", {parent: skillsFrame, id: "attack_3", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 130, marginLeft: 10 });
-    var skill_4 = new BABYLON.Text2D("Multidimensional Dash", {parent: skillsFrame, id: "attack_4", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 170, marginLeft: 10 });
-
-    // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
-    skill_1.pointerEventObservable.add(function() {
-    	telegraphTiles(player.abilities.player_skill_1.range, player, 1);
-    	infoBar.children[0].text = "Damaging close combat skill that marks an enemy";
-    	infoBar.levelVisible = true;
-    }, BABYLON.PrimitivePointerInfo.PointerOver);
-
-    // Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
-    skill_1.pointerEventObservable.add(function() {
-    	tiles.forEach(function(tile) {
-    		var animatable = scene.getAnimatableByTarget(tile);
-    		if(animatable != null) {
-    			tile.visibility = 1.0;
-    			animatable.stop();
-    		}
-    	});   
-    	if(infoBar.children[0].text == "Damaging close combat skill that marks an enemy")
-    		infoBar.levelVisible = false; 	
-    }, BABYLON.PrimitivePointerInfo.PointerLeave);
-
-    // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
-    skill_2.pointerEventObservable.add(function() {
-    	telegraphTiles(player.abilities.player_skill_2.range, player, 2);
-    	infoBar.children[0].text = "Increases enemy marks by 1 for the next 3 turns";
-    	infoBar.levelVisible = true;
-    }, BABYLON.PrimitivePointerInfo.PointerOver);
-
-	// Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
-    skill_2.pointerEventObservable.add(function() {
-    	tiles.forEach(function(tile) {
-    		var animatable = scene.getAnimatableByTarget(tile);
-    		if(animatable != null) {
-    			tile.visibility = 1.0;
-    			animatable.stop();
-    		}
-    	});
-    	if(infoBar.children[0].text == "Increases enemy marks by 1 for the next 3 turns")
-    		infoBar.levelVisible = false;
-    }, BABYLON.PrimitivePointerInfo.PointerLeave);
-
-    // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
-    skill_3.pointerEventObservable.add(function() {
-    	telegraphTiles(player.abilities.player_skill_3.range, player, 3);
-    	infoBar.children[0].text = "Consume 2 marks and stun an enemy for 2 turns";
-    	infoBar.levelVisible = true;
-    }, BABYLON.PrimitivePointerInfo.PointerOver);
-
-    // Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
-    skill_3.pointerEventObservable.add(function() {
-    	tiles.forEach(function(tile) {
-    		var animatable = scene.getAnimatableByTarget(tile);
-    		if(animatable != null) {
-    			tile.visibility = 1.0;
-    			animatable.stop();
-    		}
-    	});
-    	if(infoBar.children[0].text == "Stuns an enemy for 2 turns")
-    		infoBar.levelVisible = false;
-    }, BABYLON.PrimitivePointerInfo.PointerLeave);	
-
-    // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
-    skill_4.pointerEventObservable.add(function() {
-    	telegraphTiles(player.abilities.player_skill_4.range, player, 4);
-    	infoBar.children[0].text = "Teleport attack that can reset by killing an enemy"
-    		infoBar.levelVisible = true;
-    }, BABYLON.PrimitivePointerInfo.PointerOver);
-
-    // Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
-    skill_4.pointerEventObservable.add(function() {
-    	tiles.forEach(function(tile) {
-    		var animatable = scene.getAnimatableByTarget(tile);
-    		if(animatable != null) {
-    			tile.visibility = 1.0;
-    			animatable.stop();
-    		}
-    	});
-    	if(infoBar.children[0].text == "Teleport attack that can reset by killing an enemy")
-    		infoBar.levelVisible = false;
-    }, BABYLON.PrimitivePointerInfo.PointerLeave);
-
-    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
-    skill_1.pointerEventObservable.add(function() {
-    	if(player.abilities.player_skill_1.cooldown == 0) {
-    		infoBar.children[0].text = "Press ESC to cancel aiming";
-			infoBar.levelVisible = true;
-    		aimSkill = true;
-    		player.abilities.player_skill_1.active = true;
-	    	player.abilities.player_skill_1.cooldown = player.abilities.player_skill_1.cost;	    	
-    	}
-    	else {
-    		infoBar.children[0].text = "This ability is still on cooldown!";
-			infoBar.levelVisible = true;
-			setTimeout(function() {
-				infoBar.levelVisible = false;													
-			}, 2000);				
-    	}
-    }, BABYLON.PrimitivePointerInfo.PointerUp);
-
-    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
-    skill_2.pointerEventObservable.add(function() {
-    	if(player.abilities.player_skill_2.cooldown == 0) {
-    		infoBar.children[0].text = "Press ESC to cancel aiming";
-			infoBar.levelVisible = true;
-    		aimSkill = true;
-    		player.abilities.player_skill_2.active = true;    		
-	    	player.abilities.player_skill_2.cooldown = player.abilities.player_skill_2.cost;		    	    	
-    	}
-    	else {
-    		infoBar.children[0].text = "This ability is still on cooldown!";
-			infoBar.levelVisible = true;
-			setTimeout(function() {
-				infoBar.levelVisible = false;													
-			}, 2000);				
-    	}
-    }, BABYLON.PrimitivePointerInfo.PointerUp);
-
-    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
-    skill_3.pointerEventObservable.add(function() {
-    	if(player.abilities.player_skill_3.cooldown == 0) {
-    		infoBar.children[0].text = "Press ESC to cancel aiming";
-			infoBar.levelVisible = true;
-    		aimSkill = true;
-    		player.abilities.player_skill_3.active = true; 
-	    	player.abilities.player_skill_3.cooldown = player.abilities.player_skill_3.cost;	    	
-    	}
-    	else {
-    		infoBar.children[0].text = "This ability is still on cooldown!";
-			infoBar.levelVisible = true;
-			setTimeout(function() {
-				infoBar.levelVisible = false;													
-			}, 2000);				
-    	}
-    }, BABYLON.PrimitivePointerInfo.PointerUp);
-
-    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
-    skill_4.pointerEventObservable.add(function() {
-    	if(player.abilities.player_skill_4.cooldown == 0) {
-    		infoBar.children[0].text = "Press ESC to cancel aiming";
-			infoBar.levelVisible = true;
-    		aimSkill = true;
-    		player.abilities.player_skill_4.active = true; 
-	    	player.abilities.player_skill_4.cooldown = player.abilities.player_skill_4.cost;	    	
-    	}
-    	else {
-    		infoBar.children[0].text = "This ability is still on cooldown!";
-			infoBar.levelVisible = true;
-			setTimeout(function() {
-				infoBar.levelVisible = false;													
-			}, 2000);				
-    	}
-    }, BABYLON.PrimitivePointerInfo.PointerUp);
+    var skill_4 = new BABYLON.Text2D("Multidimensional Dash", {parent: skillsFrame, id: "attack_4", fontName: "20pt Arial", marginAlignment: "h: left, v: top", marginTop: 170, marginLeft: 10 });    
 
     /* This doesnt work for some reason...    */
     // scene.actionManager = new BABYLON.ActionManager(scene);
@@ -391,7 +330,7 @@ Game = function(canvasId) {
     	Needed for when the player wants to end the turn early without attacking or moving. 
     */
     window.addEventListener("keydown", function (evt) {
-    	// End turn manually.
+    	// End turn manually. SPACEBAR
     	if (evt.keyCode == 32 && playerTurn) {
     		var animatable = scene.getAnimatableByTarget(player);
     		if(animatable != null)
@@ -401,7 +340,7 @@ Game = function(canvasId) {
     		enemyTurn = true;
     		actEnemy(boundaries, enemies[currentEnemy]);    		    		
     	}
-    	// Leave skill aim mode.
+    	// Leave skill aim mode. ESC
     	else if(evt.keyCode == 27 && aimSkill) {
     		for(var ability in player.abilities) {
 						if(player.abilities[ability].active == true) {
@@ -409,13 +348,7 @@ Game = function(canvasId) {
 						}
 					}
 			aimSkill = false;	
-    	}
-
-    	else if(evt.keyCode == 80) {
-    		console.log(player.position);
-    		emitParticles(player);
-    		console.log(player.position);
-    	}
+    	}    
     });
 
 	// Iterate through rows and columns; create tiles for the ground and add respective interaction with the pointer.
@@ -428,8 +361,11 @@ Game = function(canvasId) {
 			tile.rotation.x = Math.PI / 2;
 			tile.actionManager = new BABYLON.ActionManager(scene);
 			var action = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOverTrigger, tile, "visibility", 0.5, 200);
-			var action2 = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOutTrigger, tile, "visibility", 1.0, 300);
+			var action2 = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOutTrigger, tile, "visibility", 1.0, 200);
 			var action3 = new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnLeftPickTrigger, function(event) {
+
+				if(hoverInterface)
+					return;
 
 				// Retrieve the mesh that is currently under the pointer.
 				tile = event.meshUnderPointer;	
@@ -474,7 +410,7 @@ Game = function(canvasId) {
 					player.animations.push(animationPlayer);
 
 					player.playAnimation(4, 7, true, 100);
-
+					
 					scene.beginAnimation(player, 0, finalFrame, false, 1.5, function() {
 
 						currentPositions.set("player", player.position);						
@@ -510,7 +446,7 @@ Game = function(canvasId) {
 					});
 				}
 				else if(!(Math.abs(player.position.x - tile.position.x) <= tileSize && Math.abs(player.position.z - tile.position.z) <= tileSize)) {
-					infoBar.children[0].text = "That's too far away!";
+					infoBar.children[0].text = "Can't move so far at once!";
 					infoBar.levelVisible = true;
 					setTimeout(function() {
 						infoBar.levelVisible = false;
@@ -625,44 +561,233 @@ Game = function(canvasId) {
   		var axisZ = BABYLON.Mesh.CreateLines("axisZ", [new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 0, size) ], scene);
   		axisZ.color = new BABYLON.Color3(0, 0, 1);
 	};
-var doOnce = 0;
+
 	// Called every frame before rendering.
 	scene.registerBeforeRender(function() {		
-
-		// if(tick % player.initiative == 0) {
-		// 	if(doOnce == 0) {
-		// 		console.log(tick);
-		// 	console.log(player.initiative);
-		// 	console.log(tick % player.initiative);
-		// 	}	
-		// 	doOnce++;
-		// 	playerTurn = true;			
-		// }
-		// else {
-		// 	playerTurn = false;
-		// 	actEnemy(enemies[currentEnemy]);
-		// }
-			
+		
+		// End round when both parties are finished.			
 		if (!playerTurn && !enemyTurn) {		
 			roundEndClear();
-		}				
+		}		
+	});
+	
+	// Called every frame after rendering.
+	var doOnce = 0;
+	scene.registerAfterRender(function() {
 
-
+		// Move hp bars with units when they're moving.
+		var animatable = scene.getAnimatableByTarget(player);
+		// Place the hp bars above the units (this has to be done here, after rendering once, possibly because the viewport dimensions are not "known" beforehand (?)). 
+		if(doOnce == 0) {
+			var targetVector = new BABYLON.Vector3(player.position.x - 1, player.position.y + 1.5, player.position.z);
+			var projection = BABYLON.Vector3.Project(targetVector, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+			player.hpRect.x = projection.x;
+			player.hpRect.y = engine.getRenderHeight() - projection.y;
+			enemies.forEach(function(enemy) {
+				var targetVector = new BABYLON.Vector3(enemy.position.x - 1.5, enemy.position.y + 1.25, enemy.position.z);
+				var projection = BABYLON.Vector3.Project(targetVector, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+				enemy.hpRect.x = projection.x;
+				enemy.hpRect.y = engine.getRenderHeight() - projection.y;
+			});
+		}		
+		else if(animatable != null) {
+			var targetVector = new BABYLON.Vector3(player.position.x - 1, player.position.y + 1.5, player.position.z);
+			var projection = BABYLON.Vector3.Project(targetVector, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+			player.hpRect.x = projection.x;
+			player.hpRect.y = engine.getRenderHeight() - projection.y;
+		}
+		else {
+			for(var i = 0; i < enemies.length; i++) {
+				var enemy = enemies[i];
+				animatable = scene.getAnimatableByTarget(enemy);
+				if(animatable != null) {
+					var targetVector = new BABYLON.Vector3(enemy.position.x - 1.5, enemy.position.y + 1.25, enemy.position.z);
+					var projection = BABYLON.Vector3.Project(targetVector, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+					enemy.hpRect.x = projection.x;
+					enemy.hpRect.y = engine.getRenderHeight() - projection.y;
+					break;
+				}
+			}
+		}
+		doOnce++;
 	});
 
 	// When asset manager has loaded everything, we're ready to render.
 	preloader.onFinish = function (tasks) {
 		// Put the interface sprite at the bottom of Z-ordering, so it doesn't override mouse interaction with the skill set.
-		spriteUI.zOrder = 1;
+		spriteUImain.zOrder = 1;		
+
+		// Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
+	    sprite_skill_icon_1.pointerEventObservable.add(function() {
+	    	hoverInterface = true;
+	    	telegraphTiles(player.abilities.player_skill_1.range, player, 1);
+	    	infoBar.children[0].text = "Damaging close combat skill that marks an enemy";
+	    	infoBar.levelVisible = true;
+	    }, BABYLON.PrimitivePointerInfo.PointerOver);
+
+	    // Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
+	    sprite_skill_icon_1.pointerEventObservable.add(function() {
+	    	hoverInterface = false;
+	    	tiles.forEach(function(tile) {
+	    		var animatable = scene.getAnimatableByTarget(tile);
+	    		if(animatable != null) {
+	    			tile.visibility = 1.0;
+	    			animatable.stop();
+	    		}
+	    	});   
+	    	if(infoBar.children[0].text == "Damaging close combat skill that marks an enemy")
+	    		infoBar.levelVisible = false; 	
+	    }, BABYLON.PrimitivePointerInfo.PointerLeave);
+
+	    // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
+	    sprite_skill_icon_2.pointerEventObservable.add(function() {
+	    	hoverInterface = true;
+	    	telegraphTiles(player.abilities.player_skill_2.range, player, 2);
+	    	infoBar.children[0].text = "Increases enemy marks by 1 for the next 3 turns";
+	    	infoBar.levelVisible = true;
+	    }, BABYLON.PrimitivePointerInfo.PointerOver);
+
+		// Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
+	    sprite_skill_icon_2.pointerEventObservable.add(function() {
+	    	hoverInterface = false;
+	    	tiles.forEach(function(tile) {
+	    		var animatable = scene.getAnimatableByTarget(tile);
+	    		if(animatable != null) {
+	    			tile.visibility = 1.0;
+	    			animatable.stop();
+	    		}
+	    	});
+	    	if(infoBar.children[0].text == "Increases enemy marks by 1 for the next 3 turns")
+	    		infoBar.levelVisible = false;
+	    }, BABYLON.PrimitivePointerInfo.PointerLeave);
+
+	    // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
+	    sprite_skill_icon_3.pointerEventObservable.add(function() {
+	    	hoverInterface = true;
+	    	telegraphTiles(player.abilities.player_skill_3.range, player, 3);
+	    	infoBar.children[0].text = "Consume 2 marks and stun an enemy for 2 turns";
+	    	infoBar.levelVisible = true;
+	    }, BABYLON.PrimitivePointerInfo.PointerOver);
+
+	    // Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
+	    sprite_skill_icon_3.pointerEventObservable.add(function() {
+	    	hoverInterface = false;
+	    	tiles.forEach(function(tile) {
+	    		var animatable = scene.getAnimatableByTarget(tile);
+	    		if(animatable != null) {
+	    			tile.visibility = 1.0;
+	    			animatable.stop();
+	    		}
+	    	});
+	    	if(infoBar.children[0].text == "Stuns an enemy for 2 turns")
+	    		infoBar.levelVisible = false;
+	    }, BABYLON.PrimitivePointerInfo.PointerLeave);	
+
+	    // Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
+	    sprite_skill_icon_4.pointerEventObservable.add(function() {
+	    	hoverInterface = true;
+	    	telegraphTiles(player.abilities.player_skill_4.range, player, 4);
+	    	infoBar.children[0].text = "Teleport attack that can reset by killing an enemy"
+	    		infoBar.levelVisible = true;
+	    }, BABYLON.PrimitivePointerInfo.PointerOver);
+
+	    // Add observable that leads to animation cancelling / value resetting when the cursor leaves the box boundaries.
+	    sprite_skill_icon_4.pointerEventObservable.add(function() {
+	    	hoverInterface = false;
+	    	tiles.forEach(function(tile) {
+	    		var animatable = scene.getAnimatableByTarget(tile);
+	    		if(animatable != null) {
+	    			tile.visibility = 1.0;
+	    			animatable.stop();
+	    		}
+	    	});
+	    	if(infoBar.children[0].text == "Teleport attack that can reset by killing an enemy")
+	    		infoBar.levelVisible = false;
+	    }, BABYLON.PrimitivePointerInfo.PointerLeave);
+
+	    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
+	    sprite_skill_icon_1.pointerEventObservable.add(function() {	    	
+	    	if(player.abilities.player_skill_1.cooldown == 0) {
+	    		infoBar.children[0].text = "Press ESC to cancel aiming";
+				infoBar.levelVisible = true;
+	    		aimSkill = true;
+	    		player.abilities.player_skill_1.active = true;
+		    	player.abilities.player_skill_1.cooldown = player.abilities.player_skill_1.cost;	    	
+	    	}
+	    	else {
+	    		infoBar.children[0].text = "This ability is still on cooldown!";
+				infoBar.levelVisible = true;
+				setTimeout(function() {
+					infoBar.levelVisible = false;													
+				}, 2000);				
+	    	}
+	    }, BABYLON.PrimitivePointerInfo.PointerUp);
+
+	    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
+	    sprite_skill_icon_2.pointerEventObservable.add(function() {
+	    	if(player.abilities.player_skill_2.cooldown == 0) {
+	    		infoBar.children[0].text = "Press ESC to cancel aiming";
+				infoBar.levelVisible = true;
+	    		aimSkill = true;
+	    		player.abilities.player_skill_2.active = true;    		
+		    	player.abilities.player_skill_2.cooldown = player.abilities.player_skill_2.cost;		    	    	
+	    	}
+	    	else {
+	    		infoBar.children[0].text = "This ability is still on cooldown!";
+				infoBar.levelVisible = true;
+				setTimeout(function() {
+					infoBar.levelVisible = false;													
+				}, 2000);				
+	    	}
+	    }, BABYLON.PrimitivePointerInfo.PointerUp);
+
+	    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
+	    sprite_skill_icon_3.pointerEventObservable.add(function() {
+	    	if(player.abilities.player_skill_3.cooldown == 0) {
+	    		infoBar.children[0].text = "Press ESC to cancel aiming";
+				infoBar.levelVisible = true;
+	    		aimSkill = true;
+	    		player.abilities.player_skill_3.active = true; 
+		    	player.abilities.player_skill_3.cooldown = player.abilities.player_skill_3.cost;	    	
+	    	}
+	    	else {
+	    		infoBar.children[0].text = "This ability is still on cooldown!";
+				infoBar.levelVisible = true;
+				setTimeout(function() {
+					infoBar.levelVisible = false;													
+				}, 2000);				
+	    	}
+	    }, BABYLON.PrimitivePointerInfo.PointerUp);
+
+	    // Left mouse-click enables the aiming mode of this skill, unless it's on cooldown.
+	    sprite_skill_icon_4.pointerEventObservable.add(function() {
+	    	if(player.abilities.player_skill_4.cooldown == 0) {
+	    		infoBar.children[0].text = "Press ESC to cancel aiming";
+				infoBar.levelVisible = true;
+	    		aimSkill = true;
+	    		player.abilities.player_skill_4.active = true; 
+		    	player.abilities.player_skill_4.cooldown = player.abilities.player_skill_4.cost;	    	
+	    	}
+	    	else {
+	    		infoBar.children[0].text = "This ability is still on cooldown!";
+				infoBar.levelVisible = true;
+				setTimeout(function() {
+					infoBar.levelVisible = false;													
+				}, 2000);				
+	    	}
+	    }, BABYLON.PrimitivePointerInfo.PointerUp);
+	   
 		// Render loop.
 		engine.runRenderLoop(function() {
 
 			// Simulate sky movement.
 			skyMaterial.emissiveTexture.uOffset += 0.0002;
-			
+
+			// Render scene.		
 			scene.render();
 		});
 	}
+
 	// Load assets.
 	preloader.load();
 
@@ -755,20 +880,21 @@ var doOnce = 0;
 		camera.position.x = 16;
 
 		player.position.y = 1;
-		player.position.x = 9;
+		player.position.x = 11;
 		player.position.z = 5;
-		// player.cellIndex = 0;
+		
 		player.health = 100;
 
+		// Reset cooldowns.
 		for(var ability in player.abilities) {
 			var currentAbility = player.abilities[ability];
 			currentAbility.cooldown = 0;
 		}			
 
 		// Spawn enemies.
-		var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 1', 'ranged', new BABYLON.Vector3(23, 1, 7));
-		var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 2', 'ranged', new BABYLON.Vector3(23, 1, 3));
-		var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(19, 1, 5));
+		var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 1', 'ranged', new BABYLON.Vector3(25, 1, 7));
+		var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 2', 'ranged', new BABYLON.Vector3(25, 1, 3));
+		var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(21, 1, 5));
 		currentEnemy = enemies.length - 1;
 			
 		// Reset game parameters.			
@@ -781,10 +907,6 @@ var doOnce = 0;
 		hpFrame.children[4].text = enemy3.health.toString();
 		hpFrame.children[6].text = enemy1.health.toString();
 		hpFrame.children[8].text = enemy2.health.toString();
-
-		// Idle sprite animation.
-		// player.stopAnimation();
-		// player.playAnimation(0, 2, true, 400);
 
 		if(level == 'grasslands') {
 
@@ -826,49 +948,37 @@ var doOnce = 0;
 			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant0_128.png");
 			textureTask.onSuccess = function (task) {
 				groundMaterial0.emissiveTexture.dispose();
-				groundMaterial0.emissiveTexture = task.texture;
-				// groundMaterials[0].emissiveTexture.dispose();
-				// groundMaterials[0].emissiveTexture = task.texture;
+				groundMaterial0.emissiveTexture = task.texture;				
 			}
 
 			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant1_128.png");
 			textureTask.onSuccess = function (task) {
 				groundMaterial1.emissiveTexture.dispose();
-				groundMaterial1.emissiveTexture = task.texture;
-				// groundMaterials[1].emissiveTexture.dispose();
-				// groundMaterials[1].emissiveTexture = task.texture;
+				groundMaterial1.emissiveTexture = task.texture;				
 			}
 
 			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant2_128.png");
 			textureTask.onSuccess = function (task) {
 				groundMaterial2.emissiveTexture.dispose();
-				groundMaterial2.emissiveTexture = task.texture;
-				// groundMaterials[2].emissiveTexture.dispose();
-				// groundMaterials[2].emissiveTexture = task.texture;
+				groundMaterial2.emissiveTexture = task.texture;				
 			}
 
 			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant3_128.png");
 			textureTask.onSuccess = function (task) {
 				groundMaterial3.emissiveTexture.dispose();
-				groundMaterial3.emissiveTexture = task.texture;
-				// groundMaterials[3].emissiveTexture.dispose();
-				// groundMaterials[3].emissiveTexture = task.texture;
+				groundMaterial3.emissiveTexture = task.texture;				
 			}
 
 			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant4_128.png");
 			textureTask.onSuccess = function (task) {
 				groundMaterial4.emissiveTexture.dispose();
-				groundMaterial4.emissiveTexture = task.texture;
-				// groundMaterials[4].emissiveTexture.dispose();
-				// groundMaterials[4].emissiveTexture = task.texture;
+				groundMaterial4.emissiveTexture = task.texture;				
 			}
 
 			textureTask = preloader.addTextureTask('image task', "assets/tiles/plains/TilesGrassVariant0_128.png");
 			textureTask.onSuccess = function (task) {
-				//groundMaterial5.emissiveTexture.dispose();
+				groundMaterial5.emissiveTexture.dispose();
 				groundMaterial5.emissiveTexture = task.texture;
-				//groundMaterials[5].emissiveTexture.dispose();
-				// groundMaterials[5].emissiveTexture = task.texture;
 			}
 
 			for(var j = 0; j < tiles.length; j++) {
@@ -909,11 +1019,12 @@ var doOnce = 0;
 		enemyDummy.tagged = false;
 		enemyDummy.taggedCounter = 0;
 		enemyDummy.isPickable = false;
-
+	
 		// Distinguish between types and add properties accordingly.
 		enemyDummy.type = enemyType;
 		if(enemyDummy.type == 'ranged') {
 			enemyDummy.health = 10;
+			enemyDummy.maxHealth = 10;
 			enemyDummy.initiative = 2;
 			enemyDummy.abilities = {
 				'ranged_default_attack' : {
@@ -932,6 +1043,7 @@ var doOnce = 0;
 		}
 		else if(enemyDummy.type == 'melee') {
 			enemyDummy.health = 20;
+			enemyDummy.maxHealth = 20;
 			enemyDummy.initiative = 3;
 			enemyDummy.abilities = {
 				'melee_default_attack' : {
@@ -944,47 +1056,12 @@ var doOnce = 0;
 					range : 1,
 					cooldown : 0,
 					cost : 3,
-					damage : 12
+					damage : 0
 				}
 			}
-		}
-				
-		// var healthBarMaterial = new BABYLON.StandardMaterial("healthBarMaterial", scene);
-		// healthBarMaterial.emissiveColor = BABYLON.Color3.Green();
-		// healthBarMaterial.backFaceCulling = false;
+		}		
 
-		// var healthBarContainerMaterial = new BABYLON.StandardMaterial("healthBarContainerMaterial", scene);
-		// healthBarContainerMaterial.emissiveColor = BABYLON.Color3.Blue();
-		// healthBarContainerMaterial.backFaceCulling = false;
-
-		// var dynamicTexture = new BABYLON.DynamicTexture("dynamicTexture", 512, scene, true);
-		// dynamicTexture.hasAlpha = true;
-
-		// var healthBarTextMaterial = new BABYLON.StandardMaterial("healthBarTextMaterial", scene);
-		// healthBarTextMaterial.emissiveTexture = dynamicTexture;
-		// healthBarTextMaterial.backFaceCulling = false;
-		// healthBarTextMaterial.emissiveColor = BABYLON.Color3.Green();
-
-		// var healthBarContainer = BABYLON.MeshBuilder.CreatePlane("healthBarContainer", { width: 2, height: 0.5, subdivisions: 4 }, scene);
-		// var healthBar = BABYLON.MeshBuilder.CreatePlane("healthBar", { width: 2, height: .5, subdivisions: 4 }, scene);
-
-		// var healthBarText = BABYLON.MeshBuilder.CreatePlane("healthBarText", { width: 2, height: 2, subdivisions: 4 }, scene);
-		// healthBarTextmaterial = healthBarMaterial;
-
-		// healthBarContainer.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
-
-		// healthBar.position = new BABYLON.Vector3(0, 0, -0.01);
-		// healthBarContainer.position = new BABYLON.Vector3(0, 3, 0);
-		// healthBarText.position = new BABYLON.Vector3(1.5, -0.4, 0);
-
-		// healthBar.parent = healthBarContainer;
-		// //healthBarContainer.parent = enemyDummy;
-		// healthBarText.parent = healthBarContainer;
-
-		// healthBar.material = healthBarMaterial;
-		// healthBarContainer.material = healthBarContainerMaterial;
-		// healthBarText.material = healthBarTextmaterial;
-
+		// Determine enemy spawn position, which can either be random or fixed, depending on the call.
 		if(!fixedPosition) {
 			var randomOddX, randomOddZ, targetVector;
 			do {
@@ -1012,17 +1089,33 @@ var doOnce = 0;
 
 		currentPositions.set(id, enemyDummy.position);
 
+		// Create a hp bar frame for each enemy that shows his current health.
+		enemyDummy.hpRect = new BABYLON.Rectangle2D({
+			id: "enemyhpRect", parent: canvas2D, x: 0, y: 0, width: canvas2D.width / 10, height: 20,
+			fill: "#494C99A0", border: "#FF0000FF, #FF0000AF", borderThickness: 3, roundRadius: 2, isPickable: false, isVisible: true,
+			children: 
+			[
+				new BABYLON.Rectangle2D(
+				{
+					id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 10 - 2, height: 17, fill: "#CF041CFF", roundRadius: 0
+				}),
+				new BABYLON.Text2D(enemyDummy.health.toString() + '/' + enemyDummy.health.toString(), {id: "enemyHPtext", fontName: "10pt Verdana", fontSuperSample: true, fontSignedDistanceField: true, marginAlignment: "h: right, v: center", marginRight: 1})
+			]
+		});
+
+		// Create four marks for each enemy that can be used by the player.
 		enemyDummy.enemyMarks = [];
 		for(var i = 0; i < 4; i++)  {
 			var enemyMark = BABYLON.Mesh.CreateSphere('sphere_' + i, 5, 0.3, scene, false, BABYLON.Mesh.DEFAULTSIDE);
 			enemyMark.material = new BABYLON.StandardMaterial('markMaterial', scene);
 			enemyMark.material.emissiveColor = new BABYLON.Color3(1.0, 0.2, 0.7);
-			enemyMark.position = new BABYLON.Vector3(enemyDummy.position.x - 0.5 + i / 3, 2, enemyDummy.position.z);
-			//enemyMark.parent = enemyDummy;
+			enemyMark.position = new BABYLON.Vector3(enemyDummy.position.x - 0.5 + i / 3, 2, enemyDummy.position.z);			
 			enemyMark.visibility = false;
 			enemyDummy.enemyMarks.push(enemyMark);
 		}
+
 		enemies.push(enemyDummy);
+		
 		return enemyDummy;
 	}
 
@@ -1278,34 +1371,27 @@ var doOnce = 0;
 					if(tile.position.x == enemy.position.x && tile.position.z == enemy.position.z) {		
 
 						// Display current ability used, onto which enemy.
-						infoBar.children[0].text = "Player using " + textPiece + "\n\t on enemy " + enemy.name + " !";
-						infoBar.levelVisible = true;						
+						// infoBar.children[0].text = "Player using " + textPiece + "\n\t on enemy " + enemy.name + " !";
+						// infoBar.levelVisible = true;						
 						
 						// Some abilities need further damage calculation and/or implementation of special effects, such as stun.
 						var damage = player.abilities[ability].damage;
 
-						if(ability == 'player_skill_4') {
+						if(ability == 'player_skill_4') {	
 
-							// // Simulate a kind of "teleportation" move behind the enemy.
-							// var skill_4_animation = new BABYLON.Animation("skill_4_animation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
-							// var keys = [];
-							// keys.push({frame: 0, value: player.position});							
-							// keys.push({frame: 100, value: new BABYLON.Vector3(enemy.position.x + tileSize, 1, enemy.position.z)});	
-							// skill_4_animation.setKeys(keys);
-							// var event1 = new BABYLON.AnimationEvent(0, function() {								
-							// 	 player.color = new BABYLON.Color4(0.0, 0.0, 0.0, 0.0);
-							// });
-							// var event2 = new BABYLON.AnimationEvent(100, function() {								
-							// 	 player.color = new BABYLON.Color4(1.0, 1.0, 1.0, 1.0);
-							// });
-							// skill_4_animation.addEvent(event1);
-							// skill_4_animation.addEvent(event2);
-							// player.animations.push(skill_4_animation);
-
-							// scene.beginAnimation(player, 0, 100, false, 1.0, function() {
-							// 	sound2.play();
-							// 	currentPositions.set("player", player.position);
-							// });			
+							for(var index = 0; index < enemies.length; index++) {
+								var restrictedTilePos = enemy.position.x + tileSize;
+								if(enemies[index].position.x == restrictedTilePos) {
+									infoBar.children[0].text = "Place behind " + enemy.name + " is blocked!";
+									infoBar.levelVisible = true;
+									aimSkill = false;			
+									player.abilities[ability].active = false;
+									setTimeout(function() {
+										infoBar.levelVisible = false;										
+									}, 3000);
+									return;
+								}
+							}							
 
 							// Invoke a particle system that simulates a teleportation move if the player.
 							player.color = new BABYLON.Color4(0.0, 0.0, 0.0, 0.0);
@@ -1354,7 +1440,7 @@ var doOnce = 0;
 						}
 
 						// Update enemy health display.
-						switch(enemies[j].name) {
+						switch(enemy.name) {
 							case 'Scrapper':										
 								hpFrame.children[4].text = enemy.health.toString();
 								break;
@@ -1365,6 +1451,10 @@ var doOnce = 0;
 								hpFrame.children[8].text = enemy.health.toString();
 								break;
 						}
+
+						enemy.hpRect.children[1].text = enemy.health.toString() + '/' + enemy.maxHealth.toString();
+						enemy.hpRect.children[0].width *= enemy.health / enemy.maxHealth;
+
 						setTimeout(function() {
 							infoBar.levelVisible = false;															
 						}, 3000);
@@ -1402,6 +1492,8 @@ var doOnce = 0;
 			else {
 				infoBar.children[0].text = "That's too far away!";
 				infoBar.levelVisible = true;
+				aimSkill = false;			
+				player.abilities[ability].active = false;
 				setTimeout(function() {
 					infoBar.levelVisible = false;													
 				}, 3000);				
@@ -1467,11 +1559,14 @@ var doOnce = 0;
 							gameOver = true;
 						}
 						hpFrame.children[2].text = player.health.toString();
+						player.hpRect.children[1].text = player.health.toString() + '/' + player.maxHealth.toString();
+						player.hpRect.children[0].width *= player.health / player.maxHealth; 
 					}, 3000);
 					break;
 				}
 			}			
 		}	
+		// Set ability on its cooldown.
 		unit.abilities[ability].cooldown = unit.abilities[ability].cost;	
 	}
 
@@ -1528,7 +1623,7 @@ var doOnce = 0;
 
 		// Amount and texture of particles.
 		var particleSystem = new BABYLON.ParticleSystem("particleSystem", 1000, scene);
-		particleSystem.particleTexture = new BABYLON.Texture("assets/particles/flare.png", scene);
+		particleSystem.particleTexture = particleTexture;
 
 		// Origin of the particle emittion.
 		particleSystem.emitter = fountain;
@@ -1754,10 +1849,7 @@ var doOnce = 0;
 		
 		animateTileVisibility(dangerousTile, 45, 0.1);
 	}
-
-	function addHealthBar(unit) {
-
-	}
+	
 };
 
 document.addEventListener("DOMContentLoaded", function () {
