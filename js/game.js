@@ -22,6 +22,7 @@ Game = function(canvasId) {
 	var soundTask3 = preloader.addBinaryFileTask("sound_3", "assets/sounds/explosion.aac");
 	soundTask3.onSuccess = function (task) {
 		sound3 = new BABYLON.Sound("sound_3", task.data, scene);
+		sound3.setVolume(0.7);
 	};	
 	var soundTask4 = preloader.addBinaryFileTask("sound_4", "assets/sounds/arrow.aac");
 	soundTask4.onSuccess = function (task) {
