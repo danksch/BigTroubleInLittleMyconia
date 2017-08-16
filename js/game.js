@@ -9,19 +9,50 @@ Game = function(canvasId) {
 	var preloader = new BABYLON.AssetsManager(scene);
 
 	// Load sound files via asset manager.
-	var sound1, sound2, sound3, sound4, sound5, sound6, sound7, sound8;
-	var binaryTask = preloader.addBinaryFileTask("sound_1", "assets/sounds/blade.aac");
-	binaryTask.onSuccess = function (task) {		
+	var sound1, sound2, sound3, sound4, sound5, sound6, sound7, sound8, sound9, music;
+	var musicTrack = new BABYLON.SoundTrack(scene);
+	var soundTask = preloader.addBinaryFileTask("sound_1", "assets/sounds/blade.aac");
+	soundTask.onSuccess = function (task) {		
 		sound1 = new BABYLON.Sound("sound_1", task.data, scene);		
 	};
-	var binaryTask2 = preloader.addBinaryFileTask("sound_2", "assets/sounds/shift.aac");
-	binaryTask2.onSuccess = function (task) {		 
+	var soundTask2 = preloader.addBinaryFileTask("sound_2", "assets/sounds/shift.aac");
+	soundTask2.onSuccess = function (task) {		 
 		sound2 = new BABYLON.Sound("sound_2", task.data, scene);
 	};
-	var binaryTask3 = preloader.addBinaryFileTask("sound_3", "assets/sounds/explosion.aac");
-	binaryTask3.onSuccess = function (task) {
+	var soundTask3 = preloader.addBinaryFileTask("sound_3", "assets/sounds/explosion.aac");
+	soundTask3.onSuccess = function (task) {
 		sound3 = new BABYLON.Sound("sound_3", task.data, scene);
 	};	
+	var soundTask4 = preloader.addBinaryFileTask("sound_4", "assets/sounds/arrow.aac");
+	soundTask4.onSuccess = function (task) {
+		sound4 = new BABYLON.Sound("sound_4", task.data, scene);
+	};
+	var soundTask5 = preloader.addBinaryFileTask("sound_5", "assets/sounds/arrow2.aac");
+	soundTask5.onSuccess = function (task) {
+		sound5 = new BABYLON.Sound("sound_5", task.data, scene);
+	};
+	var soundTask6 = preloader.addBinaryFileTask("sound_6", "assets/sounds/beep.aac");
+	soundTask5.onSuccess = function (task) {
+		sound6 = new BABYLON.Sound("sound_6", task.data, scene);
+	};
+	var soundTask7 = preloader.addBinaryFileTask("sound_7", "assets/sounds/smack.aac");
+	soundTask5.onSuccess = function (task) {
+		sound7 = new BABYLON.Sound("sound_7", task.data, scene);
+	};
+	var soundTask8 = preloader.addBinaryFileTask("sound_8", "assets/sounds/slowmo_punch.aac");
+	soundTask5.onSuccess = function (task) {
+		sound8 = new BABYLON.Sound("sound_8", task.data, scene);
+	};
+	var soundTask9 = preloader.addBinaryFileTask("sound_9", "assets/sounds/mark.aac");
+	soundTask5.onSuccess = function (task) {
+		sound9 = new BABYLON.Sound("sound_9", task.data, scene);
+	};
+	var soundTask10 = preloader.addBinaryFileTask("sound_10", "assets/sounds/music.aac");
+	soundTask10.onSuccess = function (task) {
+		music = new BABYLON.Sound("Sound_10", task.data, scene,  function() { music.play(); }, { loop: true } );
+		musicTrack.AddSound(music);		
+		musicTrack.setVolume(0.5);
+	};
 	
 	// Set up camera.
 	var camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3.Zero(), scene);
@@ -335,6 +366,13 @@ Game = function(canvasId) {
 					}
 			aimSkill = false;	
     	}    
+    	// Stop music or resume it.
+    	else if(evt.keyCode == 77) {
+    		if(music.isPlaying)
+    			music.pause();
+    		else if(music.isPaused)
+    			music.play();
+    	}
     });
 
 	// Iterate through rows and columns; create tiles for the ground and add respective interaction with the pointer.
@@ -763,6 +801,8 @@ Game = function(canvasId) {
 	    	}
 	    }, BABYLON.PrimitivePointerInfo.PointerUp);
 	   
+	    // music.play();
+
 		// Render loop.
 		engine.runRenderLoop(function() {
 
@@ -1386,7 +1426,7 @@ Game = function(canvasId) {
 
 							// Let the player reappear when the particle system 'animation' has approximately finished. 
 							setTimeout(function() {
-
+								sound2.play();
 								particleSkillAnimation.stop();
 								player.position.x = enemy.position.x + tileSize;
 								player.position.z = enemy.position.z;
@@ -1542,6 +1582,14 @@ Game = function(canvasId) {
 					animateTileVisibility(tile, 30, 0.4);
 					infoBar.children[0].text = "Enemy using " + textPiece + " on the Player!";
 					infoBar.levelVisible = true;
+					if(ability == 'ranged_default_attack')
+						sound4.play();
+					else if(ability == 'ranged_special_attack')
+						sound5.play();
+					else if(ability == 'melee_default_attack')
+						sound7.play();
+					else if(ability == 'melee_special_attack')
+						sound6.play();
 					setTimeout(function() {		
 						if(ability == 'melee_special_attack')
 							addDangerTile(tile);				
