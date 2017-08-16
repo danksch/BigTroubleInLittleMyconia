@@ -32,19 +32,20 @@ Game = function(canvasId) {
 		sound5 = new BABYLON.Sound("sound_5", task.data, scene);
 	};
 	var soundTask6 = preloader.addBinaryFileTask("sound_6", "assets/sounds/beep.aac");
-	soundTask5.onSuccess = function (task) {
+	soundTask6.onSuccess = function (task) {
 		sound6 = new BABYLON.Sound("sound_6", task.data, scene);
 	};
 	var soundTask7 = preloader.addBinaryFileTask("sound_7", "assets/sounds/smack.aac");
-	soundTask5.onSuccess = function (task) {
+	soundTask7.onSuccess = function (task) {
 		sound7 = new BABYLON.Sound("sound_7", task.data, scene);
 	};
 	var soundTask8 = preloader.addBinaryFileTask("sound_8", "assets/sounds/slowmo_punch.aac");
-	soundTask5.onSuccess = function (task) {
+	soundTask8.onSuccess = function (task) {
 		sound8 = new BABYLON.Sound("sound_8", task.data, scene);
+		sound8.setVolume(2);
 	};
 	var soundTask9 = preloader.addBinaryFileTask("sound_9", "assets/sounds/mark.aac");
-	soundTask5.onSuccess = function (task) {
+	soundTask9.onSuccess = function (task) {
 		sound9 = new BABYLON.Sound("sound_9", task.data, scene);
 	};
 	var soundTask10 = preloader.addBinaryFileTask("sound_10", "assets/sounds/music.aac");
@@ -171,6 +172,8 @@ Game = function(canvasId) {
 	var tick = 1;
 	var aimSkill = false;
 	var hoverInterface = false;
+	var currentLevel = 'mountains';
+	var gameOver = false;
 	var currentPositions = new Map();
 	currentPositions.set("player", player.position);	
 
@@ -277,7 +280,7 @@ Game = function(canvasId) {
     var turnFrame = new BABYLON.Rectangle2D({
     	id: "rectTopLeft", parent: canvas2D, width: 200, height: 100, x: 0, y: canvas2D.height - 100,
     	fill: "#4040408F", border: "#A040A0D0, #FFFFFF", borderThickness: 5,
-    	roundRadius: 10, isVisible: true, isPickable: false,
+    	roundRadius: 10, isVisible: false, isPickable: false,
     	children:
     	[
     		new BABYLON.Text2D("Current Turn:", { id: "turnTextTitle", fontName: "20pt Arial", marginAlignment: "h: center, v: top", marginTop: 5 }),
@@ -385,7 +388,7 @@ Game = function(canvasId) {
 			tile.rotation.x = Math.PI / 2;
 			tile.actionManager = new BABYLON.ActionManager(scene);
 			var action = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOverTrigger, tile, "visibility", 0.5, 200);
-			var action2 = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOutTrigger, tile, "visibility", 1.0, 200);
+			var action2 = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOutTrigger, tile, "visibility", 1.0, 400);
 			var action3 = new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnLeftPickTrigger, function(event) {
 
 				if(hoverInterface)
@@ -900,16 +903,32 @@ Game = function(canvasId) {
 	// A function that loads a new level and resets game parameters.
 	function reloadScene(level) {		
 
+		currentLevel = 'grasslands';
+		preloader.reset();
+
 		// Reset positions.
 		camera.position.y = 14;
 		camera.position.z = -9;
-		camera.position.x = 16;
+		camera.position.x = 18;
 
 		player.position.y = 1;
 		player.position.x = 11;
 		player.position.z = 5;
-		
+		player.hpRect.dispose();
 		player.health = 100;
+
+		player.hpRect = new BABYLON.Rectangle2D({
+			id: "hpRect", parent: canvas2D, x: 0, y: 0, width: canvas2D.width / 11, height: 20,
+			fill: "#494C99A0", border: "#FF0000FF, #FF0000AF", borderThickness: 3, roundRadius: 2, isPickable: false, isVisible: true,
+			children: 
+			[
+				new BABYLON.Rectangle2D(
+				{
+					id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 11 - 2, height: 17, fill: "#CF041CFF", roundRadius: 0
+				}),
+				new BABYLON.Text2D("100/100", {id: "playerHPtext", fontName: "10pt Verdana", fontSuperSample: true, fontSignedDistanceField: true, marginAlignment: "h: right, v: center", marginRight: 1})
+			]
+		});
 
 		// Reset cooldowns.
 		for(var ability in player.abilities) {
@@ -923,7 +942,8 @@ Game = function(canvasId) {
 		var enemy3 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Scrapper', 'melee', new BABYLON.Vector3(21, 1, 5));
 		currentEnemy = enemies.length - 1;
 			
-		// Reset game parameters.			
+		// Reset game parameters.	
+		doOnce = 0;		
 		playerTurn = true;
 		playerMovable = true;
 		enemyTurn = false;
@@ -1201,9 +1221,9 @@ Game = function(canvasId) {
 				if(currentEnemy >= 1) 
 					actEnemy(boundaries, enemies[--currentEnemy]);
 				else 
-					enemyTurn = false;
-				return;
-			}, 3000);			
+					enemyTurn = false;				
+			}, 3000);		
+			return;	
 		}
 		
 		var minDistanceToPlayer = enemy.type == 'ranged' ? 2 * tileSize : tileSize;		
@@ -1303,7 +1323,7 @@ Game = function(canvasId) {
 		// Adjust facing direction towards movement.
 		if(enemy.position.x > nextPos.x)
 			enemy.invertU = false;
-		else
+		else if(enemy.position.x < nextPos.x)
 			enemy.invertU = true;
 
 		// Start animating.
@@ -1335,6 +1355,15 @@ Game = function(canvasId) {
 
 			if(BABYLON.Vector3.DistanceSquared(player.position, nextPos) >= Math.pow(minDistanceToPlayer, 2) && BABYLON.Vector3.DistanceSquared(player.position, nextPos) <= 2 * Math.pow(minDistanceToPlayer, 2)) 				
 				useAbility(enemy, attackType);
+
+			if(gameOver) {
+				infoBar.children[0].text = 'Game over! Press F5 to start again!';
+				infoBar.levelVisible = true;
+				setTimeout( function() {
+					infoBar.levelVisible = false;
+				}, 3000);
+				return;
+			}
 			
 			// Select next enemy.				
 			currentEnemy--;
@@ -1502,6 +1531,7 @@ Game = function(canvasId) {
 							enemy.enemyMarks.forEach(function(mark) {
 								mark.dispose();
 							});
+							enemy.hpRect.dispose();
 							infoBar.children[0].text = enemies[j].name + " vanquished!";
 							infoBar.levelVisible = true;								
 							currentPositions.delete(enemy.name);							
@@ -1536,6 +1566,11 @@ Game = function(canvasId) {
 			}	
 			if(ability == 'player_skill_1')		
 				sound1.play();	
+			else if(ability == 'player_skill_2')
+				sound9.play();
+			else if(ability == 'player_skill_3')
+				sound8.play();
+
 
 			// Reset values.
 			playerTurn = false;
@@ -1547,11 +1582,17 @@ Game = function(canvasId) {
 			if(enemies.length < 1) {
 				infoBar.children[0].text = "Level completed!";
 				infoBar.levelVisible = true;
+				if(currentLevel == 'grasslands') {
+					setTimeout(function() {
+						infoBar.levelVisible = false;
+					}, 3000);
+					return;
+				}
 				setTimeout(function() {
 					infoBar.levelVisible = false;
-					reloadScene('grasslands');
-					return;
+					reloadScene('grasslands');					
 				}, 3000);
+				return;
 			}
 			else {
 				setTimeout(function() {
