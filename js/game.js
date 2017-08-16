@@ -184,21 +184,7 @@ Game = function(canvasId) {
 			origin: BABYLON.Vector2.Zero(),
 			isPickable: false
 		});				
-	} 
-
-	var spriteUIquestionMark;
-	textureTask = preloader.addTextureTask("image task", "img/question_mark.png");
-	textureTask.onSuccess = function(task) {
-		task.texture.hasAlpha = true;
-		spriteUIquestionMark = new BABYLON.Sprite2D(task.texture,
-		{
-			parent: canvas2D, id: "spriteUIquestionMark", x: canvas2D.width - task.texture._texture._baseWidth, y: canvas2D.height - task.texture._texture._baseHeight, invertY: false, spriteSize: null,
-			spriteLocation: BABYLON.Vector2.Zero(),
-			origin: BABYLON.Vector2.Zero(),
-			scaleX: 1, scaleY: 1,
-			isVisible: false		
-		});
-	}
+	} 	
 
 	var sprite_skill_icon_1;
 	textureTask = preloader.addTextureTask("image task", "img/skill_icon_1.png");
