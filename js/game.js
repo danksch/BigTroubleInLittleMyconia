@@ -4,7 +4,7 @@ Game = function(canvasId) {
 	var engine = new BABYLON.Engine(canvas, true);
 	var scene = new BABYLON.Scene(engine);
 	scene.clearColor = new BABYLON.Color3(93 / 255, 93 / 255, 93 / 255);
-	
+
 	// Load assets via assets manager.
 	var preloader = new BABYLON.AssetsManager(scene);
 
@@ -51,7 +51,7 @@ Game = function(canvasId) {
 	};
 	var soundTask10 = preloader.addBinaryFileTask("sound_10", "assets/sounds/music.aac");
 	soundTask10.onSuccess = function (task) {
-		music = new BABYLON.Sound("Sound_10", task.data, scene,  function() { music.play(); }, { loop: true } );
+		music = new BABYLON.Sound("Sound_10", task.data, scene,  /*function() { music.play(); },*/ { loop: true } );
 		musicTrack.AddSound(music);		
 		musicTrack.setVolume(0.5);
 	};
@@ -193,15 +193,16 @@ Game = function(canvasId) {
    
   	// Rect for player hp bar.
 	player.hpRect = new BABYLON.Rectangle2D({
-		id: "hpRect", parent: canvas2D, x: 0, y: 0, width: canvas2D.width / 11, height: 20,
+		id: "hpRect", parent: canvas2D, x: 0, y: 0, width: canvas2D.width / 12, height: 18,
 		fill: "#494C99A0", border: "#FF0000FF, #FF0000AF", borderThickness: 3, roundRadius: 2, isPickable: false, isVisible: true,
 		children: 
 		[
 			new BABYLON.Rectangle2D(
 			{
-				id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 11 - 2, height: 17, fill: "#CF041CFF", roundRadius: 0
+				id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 12 - 2, height: 15, fill: "#FF8C00FF", roundRadius: 0
 			}),
-			new BABYLON.Text2D("100/100", {id: "playerHPtext", fontName: "10pt Verdana", fontSuperSample: true, fontSignedDistanceField: true, marginAlignment: "h: right, v: center", marginRight: 1})
+			new BABYLON.Text2D("100", {id: "playerHPtext", fontName: "11pt Century Gothic", fontSuperSample: false, fontSignedDistanceField: false, marginAlignment: "h: right, v: center", marginRight: 5, 
+				defaultFontColor: new BABYLON.Color4(0.0, 0.0, 0.0, 1.0) })
 		]
 	});
 
@@ -543,6 +544,7 @@ Game = function(canvasId) {
 		// bgMaterialSmall.hasAlpha = true;
 		bgMaterialSmall.emissiveTexture.hasAlpha = true;
 		bgMaterialSmall.useAlphaFromEmissiveTexture;
+		bgMaterialSmall.emissiveTexture.uScale= 2.0;
 		bgMaterialSmall.emissiveTexture.uOffset = randomUOffset2;
 	}
 
@@ -554,6 +556,7 @@ Game = function(canvasId) {
 		// bgMaterialSmall2.hasAlpha = true;
 		bgMaterialSmall2.emissiveTexture.hasAlpha = true;
 		bgMaterialSmall2.useAlphaFromEmissiveTexture;
+		bgMaterialSmall2.emissiveTexture.uScale= 2.0;
 		bgMaterialSmall2.emissiveTexture.uOffset = randomUOffset2;
 	}
 
@@ -607,7 +610,7 @@ Game = function(canvasId) {
 		var animatable = scene.getAnimatableByTarget(player);
 		// Place the hp bars above the units (this has to be done here, after rendering once, possibly because the viewport dimensions are not "known" beforehand (?)). 
 		if(doOnce == 0) {
-			var targetVector = new BABYLON.Vector3(player.position.x - 1, player.position.y + 1.5, player.position.z);
+			var targetVector = new BABYLON.Vector3(player.position.x - 1, player.position.y + 1.6, player.position.z);
 			var projection = BABYLON.Vector3.Project(targetVector, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
 			player.hpRect.x = projection.x;
 			player.hpRect.y = engine.getRenderHeight() - projection.y;
@@ -619,7 +622,7 @@ Game = function(canvasId) {
 			});
 		}		
 		else if(animatable != null) {
-			var targetVector = new BABYLON.Vector3(player.position.x - 1, player.position.y + 1.5, player.position.z);
+			var targetVector = new BABYLON.Vector3(player.position.x - 1, player.position.y + 1.6, player.position.z);
 			var projection = BABYLON.Vector3.Project(targetVector, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
 			player.hpRect.x = projection.x;
 			player.hpRect.y = engine.getRenderHeight() - projection.y;
@@ -927,7 +930,7 @@ Game = function(canvasId) {
 				{
 					id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 11 - 2, height: 17, fill: "#CF041CFF", roundRadius: 0
 				}),
-				new BABYLON.Text2D("100/100", {id: "playerHPtext", fontName: "10pt Verdana", fontSuperSample: true, fontSignedDistanceField: true, marginAlignment: "h: right, v: center", marginRight: 1})
+				new BABYLON.Text2D("100", {id: "playerHPtext", fontName: "11pt Verdana", fontSuperSample: true, fontSignedDistanceField: true, marginAlignment: "h: right, v: center", marginRight: 5})
 			]
 		});
 
@@ -1138,15 +1141,17 @@ Game = function(canvasId) {
 
 		// Create a hp bar frame for each enemy that shows his current health.
 		enemyDummy.hpRect = new BABYLON.Rectangle2D({
-			id: "enemyhpRect", parent: canvas2D, x: 0, y: 0, width: canvas2D.width / 10, height: 20,
+			id: "enemyhpRect", parent: canvas2D, x: 0, y: 0, width: canvas2D.width / 12, height: 18,
 			fill: "#494C99A0", border: "#FF0000FF, #FF0000AF", borderThickness: 3, roundRadius: 2, isPickable: false, isVisible: true,
 			children: 
 			[
 				new BABYLON.Rectangle2D(
 				{
-					id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 10 - 2, height: 17, fill: "#CF041CFF", roundRadius: 0
+					id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 12 - 2, height: 15, fill: "#FF8C00FF", roundRadius: 0					
 				}),
-				new BABYLON.Text2D(enemyDummy.health.toString() + '/' + enemyDummy.health.toString(), {id: "enemyHPtext", fontName: "10pt Verdana", fontSuperSample: true, fontSignedDistanceField: true, marginAlignment: "h: right, v: center", marginRight: 1})
+				new BABYLON.Text2D(enemyDummy.health.toString(), {id: "enemyHPtext", fontName: "11pt Cenutry Gothic", fontSuperSample: false, fontSignedDistanceField: false, marginAlignment: "h: right, v: center", marginRight: 5, 
+					defaultFontColor: new BABYLON.Color4(0.0, 0.0, 0.0, 1.0)	
+				})
 			]
 		});
 
@@ -1517,7 +1522,7 @@ Game = function(canvasId) {
 								break;
 						}
 
-						enemy.hpRect.children[1].text = enemy.health.toString() + '/' + enemy.maxHealth.toString();
+						enemy.hpRect.children[1].text = enemy.health.toString();
 						enemy.hpRect.children[0].width *= enemy.health / enemy.maxHealth;
 
 						setTimeout(function() {
@@ -1644,8 +1649,8 @@ Game = function(canvasId) {
 							gameOver = true;
 						}
 						hpFrame.children[2].text = player.health.toString();
-						player.hpRect.children[1].text = player.health.toString() + '/' + player.maxHealth.toString();
-						player.hpRect.children[0].width *= player.health / player.maxHealth; 
+						player.hpRect.children[1].text = player.health.toString();
+						player.hpRect.children[0].width *= player.health / player.maxHealth; 						
 					}, 3000);
 					break;
 				}
