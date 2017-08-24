@@ -4,23 +4,56 @@
 	<meta http-equiv="Content-Type" content="text/html" charset="utf-8"/>
 	<title>Big Trouble in Little Myconia</title>
 	<script src="js/babylon.2.5.max.js"></script>
+	<script src="js/babylon.canvas2d.js"></script>
 	<script src="js/hand.js"></script>
 	<script src="js/babylon.gridMaterial.js"></script>
 	<script src="js/LevelAssetLoader.js"></script>
 	<script src="js/game.js"></script>
-	<style>
+	<style>	
+
 		html, body {
 			overflow: hidden;
 			width: 100%;
 			height: 100%;
 			margin: 0;
 			padding: 0;
+			background-color: whitesmoke;
+		}
+
+		.viewportRatio(@x, @y) {
+		  width: 100vw;
+		  height: @y * 100vw / @x;
+		  max-width: @x / @y * 100vh;
+		  max-height: 100vh;
 		}
 
 		#renderCanvas {
-			width: 100%;
-			height: 100%;
+			/*padding: 0;
+			margin: auto;
+			width: 1422px;
+			height: 800px;
 			touch-action: none;
+			border-style: solid;
+			border-color: black;
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;*/
+					
+			width: 90vw;
+			height: 50.625vw;				
+			border-style: solid;
+			border-color: cadetblue;
+			border-radius: 1px;
+			max-height: 90vh;
+			max-width: 160vh;
+			margin: auto;
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;
 		}
 	</style>
 </head>
