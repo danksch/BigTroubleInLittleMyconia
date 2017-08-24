@@ -51,7 +51,7 @@ Game = function(canvasId) {
 	};
 	var soundTask10 = preloader.addBinaryFileTask("sound_10", "assets/sounds/music.aac");
 	soundTask10.onSuccess = function (task) {
-		music = new BABYLON.Sound("Sound_10", task.data, scene,  /*function() { music.play(); },*/ { loop: true } );
+		music = new BABYLON.Sound("Sound_10", task.data, scene,  function() { music.play(); }, { loop: true } );
 		musicTrack.AddSound(music);		
 		musicTrack.setVolume(0.5);
 	};
