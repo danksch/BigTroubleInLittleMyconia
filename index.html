@@ -9,26 +9,207 @@
 			text-align: center;
 			font-family: 'Gloria Hallelujah', cursive;
 			font-size: 2em;
-			color: #e5e5e5;
+			color: #e5e5e5;						
 		}		
+
 		img {
-			width: 100%;
+			width: 90%;
 			max-width: 1200px;
+			background: url('img/loading.gif') 50% no-repeat;
+		}		
+
+		.loader {
+			border: 16px solid #f3f3f3;
+			border-top: 16px solid #3498db;
+			border-radius: 50%;
+			width: 120px;
+			height: 120px;
+			-animation: spin 2s linear infinite;
+			animation: spin 2s linear infinite;
+		}			
+
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
 		}
 
-	</style>	
-	<link href='https://fonts.googleapis.com/css?family=Gloria+Hallelujah" rel="stylesheet' rel='stylesheet' type='text/css'>
-</head>
-<body>
+		* {box-sizing: border-box}
 
-	<img src='img/TitleNoMenu.png' /><br/>
-	Click anywhere to start!
+		#intro-id {
+			display: none;
+		}	
+
+		.intro-container {			
+			width: 80%;
+			max-width: 1200px;
+			margin: auto;
+			position: relative;				
+		}
+
+		.mySlides {
+			display: none;
+		}
+
+		.prev, .next {
+			cursor: pointer;
+			position: absolute;
+			top: 50%;
+			width: auto;
+			margin-top: -22px;
+			padding: 16px;
+			color: white;
+			font-weight: bold;
+			font-size: 18px;
+			transition: 0.6s ease;
+			border-radius: 3px 0 3px;
+		}
+
+		.prev {
+			left: 0;
+		}
+
+		.next {
+			right: 0;
+			border-radius: 0 3px 3px 0;
+		}
+
+		.prev:hover, .next:hover {
+			background-color: rgba(0, 0, 0, 0.8);
+		}
+
+		.text {
+			color: #f2f2f2;
+			font-size: 15px;
+			padding: 8px 12px;
+			position: absolute;
+			bottom: 8px;
+			width: 100%;
+			text-align: center;
+		}
+
+		.numbertext {
+			color: #f2f2f2;
+			font-size: 12px;
+			padding: 8px 12px;
+			position: absolute;
+			top: 0;
+		}		
+
+		.fade {
+			animation-name: fade;
+			animation-duration: 1.5s;			
+		}		
+
+		@keyframes fade {
+			from {opacity: .4}
+			to {opacity: 1}
+		}
+
+		@keyframes colortransition1 {
+			0% {background-color: green;}
+			100% {background-color: burlywood;}
+		}
+
+		@keyframes colortransition2 {
+			0% {background-color: burlywood;}
+			100% {background-color: black;}
+		}
+
+		@keyframes colortransition3 {
+			0% {background-color: black;}
+			100% {background-color: darkviolet;}
+		}
+
+	</style>		
+	<link href='https://fonts.googleapis.com/css?family=Gloria+Hallelujah' rel='stylesheet' type='text/css'>
+</head>
+<body>	
+
+	<audio id="music" preload="auto">
+		<source src="assets/sounds/intro.mp3" type="audio/mpeg">
+	</audio>	
+
+	<div id="image">	
+		<img src='img/TitleNoMenu.png' /><br/>
+		Click anywhere to start!
+	</div>	
+	
+	<div id="intro-id">
+	<div class="intro-container">
+		<div class="mySlides fade">
+			<div class="numbertext">1 / 3</div>
+			<img src="img/intro/Intro1.png" style="width:100%">
+			<div class="text"></div>
+		</div>
+	
+		<div class="mySlides fade">
+			<div class="numbertext">2 / 3</div>
+			<img src="img/intro/Intro2.png" style="width:100%">
+			<div class="text"></div>
+		</div>
+		
+		<div class="mySlides fade">
+			<div class="numbertext">3 / 3</div>
+			<img src="img/intro/Intro3.png" style="width:100%">
+			<div class="text"></div>
+		</div>		
+		<a class="prev" onclick="plusSlides(-1)">&#10094;</a>
+		<a class="next" onclick="plusSlides(1)">&#10095;</a>
+</div></div>			
 
 	<script>
+
+	var slideIndex = 1;
+	var clickOnce = 0;
+	var playOnce = 0;
+	showSlides(slideIndex);
+
+	function plusSlides(n) {
+		showSlides(slideIndex += n);
+		if(n == 1 && slideIndex == 2) {
+			if(playOnce == 0) {
+				var audio = document.getElementById("music");
+				audio.play();
+				playOnce++;
+			}
+			document.body.style.animation = "colortransition2 4s linear 0s 1 normal forwards running";	 
+		}
+		else if(n == -1 && slideIndex == 1)
+			document.body.style.animation = "colortransition2 4s linear 0s 1 reverse forwards running";	 
+		else if(n == 1 && slideIndex == 3) 
+			document.body.style.animation = "colortransition3 4s linear 0s 1 normal forwards running";		
+		else if(n == -1 && slideIndex == 2)
+			document.body.style.animation = "colortransition3 4s linear 0s 1 reverse forwards running";
+	}		
+
+	function showSlides(n) {
+		var i;
+		var slides = document.getElementsByClassName("mySlides");		
+		if(n > slides.length) {
+			window.location = "game.html";			
+		}
+		if(n < 1) {
+			slideIndex = 1;
+		}
+		for(i = 0; i < slides.length; i++) {
+			slides[i].style.display = "none";	
+		} 		
+		slides[slideIndex - 1].style.display = "block";		
+	}
+		
 	window.addEventListener("click", function() {
-		window.location = "game.html";
+		
+		if(clickOnce == 0) {
+			document.body.style.animation = "colortransition1 4s linear 0s 1 normal forwards running";
+			var image = document.getElementById("image");
+			image.style.display = "none";
+			var intro = document.getElementById("intro-id");
+			intro.style.display = "block";
+		}	
+		clickOnce++;			
 	})
-	</script>	
+
+	</script>		
 
 </body>
 </html>
