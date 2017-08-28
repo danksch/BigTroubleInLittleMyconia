@@ -377,21 +377,7 @@ Game = function(canvasId) {
     			music.pause();
     		else if(music.isPaused)
     			music.play();
-    	}
-
-    	else if(evt.keyCode == 67) {
-    		music.stop();
-    		document.getElementById('renderCanvas').style.display = 'none';
-    		document.getElementById('imageCanvas').style.display = 'block';
-    		document.getElementById('imageCanvas').style.animation = 'fadeIn 2.5s linear 0s 1 normal forwards running';  
-    		
-    		document.getElementById('imageCanvas').addEventListener('click', function(e) {
-    				// Stop the event from firing automatically.
-    				e.stopPropagation();
-    				// Execute the scene reloading.
-    				onClickTrigger();
-    			});	    		     			
-    	}
+    	}    	
     });
 
 	// Iterate through rows and columns; create tiles for the ground and add respective interaction with the pointer.
@@ -1636,7 +1622,17 @@ Game = function(canvasId) {
 				}
 				setTimeout(function() {
 					infoBar.levelVisible = false;
-					reloadScene('grasslands');					
+					// reloadScene('grasslands');
+					music.stop();
+		    		document.getElementById('renderCanvas').style.display = 'none';
+		    		document.getElementById('imageCanvas').style.display = 'block';
+		    		document.getElementById('imageCanvas').style.animation = 'fadeIn 2.5s linear 0s 1 normal forwards running';			    		
+		    		document.getElementById('imageCanvas').addEventListener('click', function(e) {
+		    				// Stop the event from firing automatically.
+		    				e.stopPropagation();
+		    				// Execute the scene reloading.
+		    				onClickTrigger();
+		    		});	  					
 				}, 3000);
 				return;
 			}
