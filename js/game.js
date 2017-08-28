@@ -378,6 +378,20 @@ Game = function(canvasId) {
     		else if(music.isPaused)
     			music.play();
     	}
+
+    	else if(evt.keyCode == 67) {
+    		music.stop();
+    		document.getElementById('renderCanvas').style.display = 'none';
+    		document.getElementById('imageCanvas').style.display = 'block';
+    		document.getElementById('imageCanvas').style.animation = 'fadeIn 2.5s linear 0s 1 normal forwards running';  
+    		
+    		document.getElementById('imageCanvas').addEventListener('click', function(e) {
+    				// Stop the event from firing automatically.
+    				e.stopPropagation();
+    				// Execute the scene reloading.
+    				onClickTrigger();
+    			});	    		     			
+    	}
     });
 
 	// Iterate through rows and columns; create tiles for the ground and add respective interaction with the pointer.
@@ -393,6 +407,7 @@ Game = function(canvasId) {
 			var action2 = new BABYLON.InterpolateValueAction(BABYLON.ActionManager.OnPointerOutTrigger, tile, "visibility", 1.0, 400);
 			var action3 = new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnLeftPickTrigger, function(event) {
 
+				// Avoid interference with 2D-canvas interaction.
 				if(hoverInterface)
 					return;
 
@@ -922,17 +937,18 @@ Game = function(canvasId) {
 		player.health = 100;
 
 		player.hpRect = new BABYLON.Rectangle2D({
-			id: "hpRect", parent: canvas2D, x: 0, y: 0, width: canvas2D.width / 11, height: 20,
+			id: "hpRect", parent: canvas2D, x: 0, y: 0, width: canvas2D.width / 12, height: 18,
 			fill: "#494C99A0", border: "#FF0000FF, #FF0000AF", borderThickness: 3, roundRadius: 2, isPickable: false, isVisible: true,
 			children: 
 			[
 				new BABYLON.Rectangle2D(
 				{
-					id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 11 - 2, height: 17, fill: "#CF041CFF", roundRadius: 0
+					id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 12 - 2, height: 15, fill: "#FF8C00FF", roundRadius: 0
 				}),
-				new BABYLON.Text2D("100", {id: "playerHPtext", fontName: "11pt Verdana", fontSuperSample: true, fontSignedDistanceField: true, marginAlignment: "h: right, v: center", marginRight: 5})
+				new BABYLON.Text2D("100", {id: "playerHPtext", fontName: "11pt Century Gothic", fontSuperSample: false, fontSignedDistanceField: false, marginAlignment: "h: right, v: center", marginRight: 5, 
+					defaultFontColor: new BABYLON.Color4(0.0, 0.0, 0.0, 1.0) })
 			]
-		});
+		});		
 
 		// Reset cooldowns.
 		for(var ability in player.abilities) {
@@ -961,6 +977,21 @@ Game = function(canvasId) {
 		if(level == 'grasslands') {
 
 			scene.clearColor = new BABYLON.Color3(74 / 255, 249 / 255, 68 / 255);
+			   
+			textureTask = preloader.addTextureTask("image task", "assets_ALT/levels/grasslands/interface/0.png");	
+			spriteUImain.dispose();
+			textureTask.onSuccess = function(task) {	
+				var scaleFactor =  canvas2D.width / task.texture._texture._baseWidth;			
+				task.texture.hasAlpha = true;
+				spriteUImain = new BABYLON.Sprite2D(task.texture, 
+				{	
+					parent: canvas2D, id: "spriteUImain", x: -1, y: -1, invertY: false, spriteSize: null, 
+					spriteLocation: BABYLON.Vector2.Zero(), 
+					scaleX: scaleFactor, scaleY: scaleFactor,			
+					origin: BABYLON.Vector2.Zero(),
+					isPickable: false
+				});		
+			} 	
 
 			textureTask = preloader.addTextureTask('image task', "assets/levels/grasslands/backgrounds/front/1.png");
 			textureTask.onSuccess = function (task) {
@@ -1047,6 +1078,15 @@ Game = function(canvasId) {
 			}
 		}
 		preloader.load();
+	}
+
+	// Callback function for event that is triggered at level change.
+	function onClickTrigger() {
+		
+		var imageDiv = document.getElementById('imageCanvas');
+		imageDiv.style.display = 'none';
+		document.getElementById('renderCanvas').style.display = 'block';
+		reloadScene('grasslands');				
 	}
 
 	// A function that spawns an enemy unit, depending on type. It can either be spawned randomly withing a given range, or at a fixed location.
