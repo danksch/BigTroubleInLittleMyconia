@@ -163,8 +163,7 @@
 	</audio>	
 
 	<div id="image">	
-		<img src='img/TitleNoMenu.png' /><!-- <br/>
-		Click anywhere to start! -->
+		<img src='img/TitleNoMenu.png' />
 		<h2>Click anywhere to start!</h2>
 	</div>	
 	
@@ -203,6 +202,7 @@
 		if(n == 1 && slideIndex == 2) {
 			if(playOnce == 0) {
 				var audio = document.getElementById("music");
+				audio.volume = 0.5;
 				audio.play();
 				playOnce++;
 			}

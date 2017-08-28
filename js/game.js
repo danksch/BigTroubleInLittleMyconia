@@ -51,7 +51,7 @@ Game = function(canvasId) {
 	};
 	var soundTask10 = preloader.addBinaryFileTask("sound_10", "assets/sounds/music.aac");
 	soundTask10.onSuccess = function (task) {
-		music = new BABYLON.Sound("Sound_10", task.data, scene,  function() { music.play(2); }, { loop: true } );
+		music = new BABYLON.Sound("Sound_10", task.data, scene, function() { music.play(2); }, { loop: true } );
 		musicTrack.AddSound(music);		
 		musicTrack.setVolume(0.5);
 	};
@@ -184,7 +184,7 @@ Game = function(canvasId) {
         size: new BABYLON.Size(canvas.width, canvas.height),
         cachingStrategy: BABYLON.Canvas2D.CACHESTRATEGY_DONTCACHE
     });
-
+	console.log(canvas2D.width);
 	// Spawn enemies.
 	var enemy1 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 1', 'ranged', new BABYLON.Vector3(25, 1, 7));
 	var enemy2 = spawnEnemy(boundaries.right / 2, boundaries.right, boundaries.front, boundaries.back, 'Marksman 2', 'ranged', new BABYLON.Vector3(25, 1, 3));
@@ -222,14 +222,18 @@ Game = function(canvasId) {
 		});				
 	} 	
 
+	var canvasGroup = new BABYLON.Group2D({
+		parent: canvas2D, id: 'group', layoutEngine: "horizontalstackpanel"
+	});
+
 	var sprite_skill_icon_1;
 	textureTask = preloader.addTextureTask("image task", "img/skill_icon_1.png");
 	textureTask.onSuccess = function(task) {
 		task.texture.hasAlpha = true;
-		var scaleFactor = 0.3;
+		var scaleFactor = canvas2D.width / 4320;
 		sprite_skill_icon_1 = new BABYLON.Sprite2D(task.texture,
 		{
-			parent: canvas2D, id: "spriteSkillIcon1", x: canvas2D.width * (1 / 60), y: canvas2D.height* (3 / 40), invertY: false, spriteSize: null,
+			parent: canvasGroup, id: "spriteSkillIcon1", x: canvas2D.width * (1 / 60), y: canvas2D.height* (1 / 50), invertY: false, spriteSize: null,
 			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
 			isVisible: true, isPickable: true,
 			scaleX: scaleFactor, scaleY: scaleFactor
@@ -240,10 +244,10 @@ Game = function(canvasId) {
 	textureTask = preloader.addTextureTask("image task", "img/skill_icon_3.png");
 	textureTask.onSuccess = function(task) {
 		task.texture.hasAlpha = true;
-		var scaleFactor = 0.3;
+		var scaleFactor = canvas2D.width / 4320;
 		sprite_skill_icon_2 = new BABYLON.Sprite2D(task.texture,
 		{
-			parent: canvas2D, id: "spriteSkillIcon1", x: canvas2D.width * (5.25 / 60), y: canvas2D.height * (1 / 40), invertY: false, spriteSize: null,
+			parent: canvasGroup, id: "spriteSkillIcon1", x: canvas2D.width * (5.5 / 60), y: canvas2D.height * (1 / 50), invertY: false, spriteSize: null,
 			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
 			isVisible: true, isPickable: true,
 			scaleX: scaleFactor, scaleY: scaleFactor
@@ -254,10 +258,10 @@ Game = function(canvasId) {
 	textureTask = preloader.addTextureTask("image task", "img/skill_icon_2.png");
 	textureTask.onSuccess = function(task) {
 		task.texture.hasAlpha = true;
-		var scaleFactor = 0.3;
+		var scaleFactor = canvas2D.width / 4320;
 		sprite_skill_icon_3 = new BABYLON.Sprite2D(task.texture,
 		{
-			parent: canvas2D, id: "spriteSkillIcon1", x: canvas2D.width * (11 / 60), y: canvas2D.height * (1.75 / 40), invertY: false, spriteSize: null,
+			parent: canvasGroup, id: "spriteSkillIcon1", x: canvas2D.width * (10 / 60), y: canvas2D.height * (1 / 50), invertY: false, spriteSize: null,
 			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
 			isVisible: true, isPickable: true,
 			scaleX: scaleFactor, scaleY: scaleFactor
@@ -268,10 +272,10 @@ Game = function(canvasId) {
 	textureTask = preloader.addTextureTask("image task", "img/skill_icon_4.png");
 	textureTask.onSuccess = function(task) {
 		task.texture.hasAlpha = true;
-		var scaleFactor = 0.3;
+		var scaleFactor = canvas2D.width / 4320;
 		sprite_skill_icon_4 = new BABYLON.Sprite2D(task.texture,
 		{
-			parent: canvas2D, id: "spriteSkillIcon1", x: canvas2D.width * (15.25 / 60), y: canvas2D.height * (1 / 40), invertY: false, spriteSize: null,
+			parent: canvasGroup, id: "spriteSkillIcon1", x: canvas2D.width * (14.5 / 60), y: canvas2D.height * (1 / 50), invertY: false, spriteSize: null,
 			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
 			isVisible: true, isPickable: true,
 			scaleX: scaleFactor, scaleY: scaleFactor
@@ -377,7 +381,20 @@ Game = function(canvasId) {
     			music.pause();
     		else if(music.isPaused)
     			music.play();
-    	}    	
+    	}
+    	// else if(evt.keyCode == 67) {
+    	// 	music.stop();
+    	// 	document.getElementById('imageCanvas').getElementsByTagName('img')[0].src = 'img/intro/TBC.png';
+			  //   		document.getElementById('renderCanvas').style.display = 'none';
+			  //   		document.getElementById('imageCanvas').style.display = 'block';
+			  //   		document.getElementById('imageCanvas').style.animation = 'fadeIn 2.5s linear 0s 1 normal forwards running';			    		
+			  //   		document.getElementById('imageCanvas').addEventListener('click', function(e) {
+			  //   				// Stop the event from firing automatically.
+			  //   				e.stopPropagation();
+			  //   				// Execute the scene reloading.
+			  //   				onClickTriggerEnding();	
+			  //   	});							
+    	// }    	
     });
 
 	// Iterate through rows and columns; create tiles for the ground and add respective interaction with the pointer.
@@ -807,9 +824,8 @@ Game = function(canvasId) {
 					infoBar.levelVisible = false;													
 				}, 2000);				
 	    	}
-	    }, BABYLON.PrimitivePointerInfo.PointerUp);
+	    }, BABYLON.PrimitivePointerInfo.PointerUp);  
 	   
-	    // music.play();
 
 		// Render loop.
 		engine.runRenderLoop(function() {
@@ -1068,11 +1084,30 @@ Game = function(canvasId) {
 
 	// Callback function for event that is triggered at level change.
 	function onClickTrigger() {
-		
+		// Remove trigger.
+		document.getElementById('imageCanvas').removeEventListener('click', function(e) {
+			e.stopPropagation();
+			onCickTrigger();
+		});
 		var imageDiv = document.getElementById('imageCanvas');
 		imageDiv.style.display = 'none';
 		document.getElementById('renderCanvas').style.display = 'block';
-		reloadScene('grasslands');				
+		// Load second level.
+		reloadScene('grasslands');			
+	}
+
+	// Callback function for event that is triggered at game ending.
+	function onClickTriggerEnding() {
+		// Remove trigger.
+		document.getElementById('imageCanvas').removeEventListener('click', function(e) {
+			e.stopPropagation();
+			onClickTriggerEnding();
+		});
+		var imageDiv = document.getElementById('imageCanvas')
+		imageDiv.style.display = 'none';
+		document.getElementById('renderCanvas').style.display = 'block';
+		// Reload page.
+		location.reload();
 	}
 
 	// A function that spawns an enemy unit, depending on type. It can either be spawned randomly withing a given range, or at a fixed location.
@@ -1263,7 +1298,7 @@ Game = function(canvasId) {
 		var distanceZ = Math.abs(player.position.z - enemy.position.z);
 		var distanceToPlayer = BABYLON.Vector3.Distance(player.position, enemy.position);
 		var distanceToPlayerSquared = BABYLON.Vector3.DistanceSquared(player.position, enemy.position);		
-		var hideMarks = true;		
+		var hideMarks = false;		
 
 		// Determine movement direction on X-direction.
 		var stepX = (enemy.position.x > player.position.x) ? -tileSize : tileSize;		
@@ -1617,21 +1652,31 @@ Game = function(canvasId) {
 				if(currentLevel == 'grasslands') {
 					setTimeout(function() {
 						infoBar.levelVisible = false;
+						music.stop();
+			    		document.getElementById('renderCanvas').style.display = 'none';
+			    		document.getElementById('imageCanvas').style.display = 'block';
+			    		document.getElementById('imageCanvas').style.animation = 'fadeIn 2.5s linear 0s 1 normal forwards running';			    		
+			    		document.getElementById('imageCanvas').addEventListener('click', function(e) {
+		    				// Stop the event from firing automatically.
+		    				e.stopPropagation();
+		    				// Execute the scene reloading.
+		    				onClickTrigger();	
+			    	});								
 					}, 3000);
 					return;
 				}
 				setTimeout(function() {
-					infoBar.levelVisible = false;
-					// reloadScene('grasslands');
+					infoBar.levelVisible = false;					
 					music.stop();
+					document.getElementById('imageCanvas').getElementsByTagName('img')[0].src = 'img/intro/TBC.png';
 		    		document.getElementById('renderCanvas').style.display = 'none';
 		    		document.getElementById('imageCanvas').style.display = 'block';
 		    		document.getElementById('imageCanvas').style.animation = 'fadeIn 2.5s linear 0s 1 normal forwards running';			    		
 		    		document.getElementById('imageCanvas').addEventListener('click', function(e) {
-		    				// Stop the event from firing automatically.
-		    				e.stopPropagation();
-		    				// Execute the scene reloading.
-		    				onClickTrigger();
+	    				// Stop the event from firing automatically.
+	    				e.stopPropagation();
+	    				// Reload page to play again.	    				 
+	    				onClickTriggerEnding();	    				
 		    		});	  					
 				}, 3000);
 				return;
