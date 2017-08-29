@@ -230,6 +230,48 @@ Game = function(canvasId) {
 		parent: canvas2D, id: 'group', layoutEngine: "horizontalstackpanel"
 	});
 
+	var sprite_unmuted_icon;
+	textureTask = preloader.addTextureTask("image task", "img/soundon.png");
+	textureTask.onSuccess = function(task) {
+		task.texture.hasAlpha = true;
+		var scaleFactor = canvas2D.width / 4320;
+		sprite_unmuted_icon = new BABYLON.Sprite2D(task.texture,
+		{
+			parent: canvas2D, id: "spriteUnmutedIcon", x: -(canvas.width * (1 / 250)), y: canvas2D.height * 0.9, invertY: false, spriteSize: null,
+			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
+			isVisible: true, isPickable: true,
+			scaleX: scaleFactor, scaleY: scaleFactor
+		});		
+	}
+
+	var sprite_muted_icon;
+	textureTask = preloader.addTextureTask("image task", "img/soundoff.png");
+	textureTask.onSuccess = function(task) {
+		task.texture.hasAlpha = true;
+		var scaleFactor = canvas2D.width / 4320;
+		sprite_muted_icon = new BABYLON.Sprite2D(task.texture,
+		{
+			parent: canvas2D, id: "spriteMutedIcon", x: -(canvas.width * (1 / 250)), y: canvas2D.height * 0.9, invertY: false, spriteSize: null,
+			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
+			isVisible: false, isPickable: true,
+			scaleX: scaleFactor, scaleY: scaleFactor
+		});		
+	}
+
+	var sprite_help_icon;
+	textureTask = preloader.addTextureTask("image task", "img/help.png");
+	textureTask.onSuccess = function(task) {
+		task.texture.hasAlpha = true;
+		var scaleFactor = canvas2D.width / 4320;
+		sprite_help_icon = new BABYLON.Sprite2D(task.texture,
+		{
+			parent: canvas2D, id: "spriteHelpIcon", x: -(canvas.width * (1 / 250)) + canvas2D.width * (4 / 60), y: canvas2D.height * 0.9, invertY: false, spriteSize: null,
+			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
+			isVisible: true, isPickable: true,
+			scaleX: scaleFactor, scaleY: scaleFactor
+		});		
+	}
+
 	var sprite_skill_icon_1;
 	textureTask = preloader.addTextureTask("image task", "img/skill_icon_1.png");
 	textureTask.onSuccess = function(task) {
@@ -237,7 +279,7 @@ Game = function(canvasId) {
 		var scaleFactor = canvas2D.width / 4320;
 		sprite_skill_icon_1 = new BABYLON.Sprite2D(task.texture,
 		{
-			parent: canvasGroup, id: "spriteSkillIcon1", x: canvas2D.width * (1 / 60), y: canvas2D.height* (1 / 50), invertY: false, spriteSize: null,
+			parent: canvasGroup, id: "spriteSkillIcon1", x: canvas2D.width * (1 / 60) , y: canvas2D.height * (1 / 50), invertY: false, spriteSize: null,
 			spriteLocation: BABYLON.Vector2.Zero(), origin: BABYLON.Vector2.Zero(),
 			isVisible: true, isPickable: true,
 			scaleX: scaleFactor, scaleY: scaleFactor
@@ -383,10 +425,16 @@ Game = function(canvasId) {
     	}    
     	// Stop music or resume it.
     	else if(evt.keyCode == 77) {
-    		if(music.isPlaying)
+    		if(music.isPlaying) {
     			music.pause();
-    		else if(music.isPaused)
+    			sprite_muted_icon.levelVisible = !sprite_muted_icon.levelVisible;
+    			sprite_unmuted_icon.levelVisible = !sprite_unmuted_icon.levelVisible;
+    		}
+    		else if(music.isPaused) {
     			music.play();
+    			sprite_muted_icon.levelVisible = !sprite_muted_icon.levelVisible;
+    			sprite_unmuted_icon.levelVisible = !sprite_unmuted_icon.levelVisible;
+    		}
     	}
     	// Player abilities that are accessed via shortcuts (1-4).
     	else if(evt.keyCode == 49 && playerTurn) {    		   	
@@ -503,7 +551,6 @@ Game = function(canvasId) {
 					playerMovable = false;						
 
 					var nextPos = new BABYLON.Vector3(tile.getAbsolutePosition().x, player.position.y, tile.getAbsolutePosition().z);
-
 
 					if(nextPos.x < player.position.x)
 						player.invertU = true;
@@ -732,6 +779,28 @@ Game = function(canvasId) {
 	preloader.onFinish = function (tasks) {
 		// Put the interface sprite at the bottom of Z-ordering, so it doesn't override mouse interaction with the skill set.
 		spriteUImain.zOrder = 1;		
+		
+		// Add mute/unmute music buttons.
+		sprite_unmuted_icon.pointerEventObservable.add(function() {	
+			if(music.isPlaying)
+				music.pause();
+			sprite_unmuted_icon.levelVisible = !sprite_unmuted_icon.levelVisible;
+			sprite_muted_icon.levelVisible = !sprite_muted_icon.levelVisible; 
+		}, BABYLON.PrimitivePointerInfo.PointerUp);
+
+		sprite_muted_icon.pointerEventObservable.add(function() {	
+			if(music.isPaused)
+				music.play();
+			sprite_unmuted_icon.levelVisible = !sprite_unmuted_icon.levelVisible;
+			sprite_muted_icon.levelVisible = !sprite_muted_icon.levelVisible; 			
+		}, BABYLON.PrimitivePointerInfo.PointerUp);
+
+		// Add click event on help icon that opens up wiki in another tab.
+		sprite_help_icon.pointerEventObservable.add(function() {
+			var wikiTab = window.open('https://github.com/danksch/BigTroubleInLittleMyconia/wiki', '_blank');
+			wikiTab.blur();
+			window.focus();
+		}, BABYLON.PrimitivePointerInfo.PointerUp);
 
 		// Add observable that leads to tile telegraphing when the cursor hovers over the box boundaries.
 	    sprite_skill_icon_1.pointerEventObservable.add(function() {
@@ -912,7 +981,7 @@ Game = function(canvasId) {
 
 	// A function that is called when both parties are finished and mechanic parameters must be re-evalued. It prepares for the next round.
 	function roundEndClear() {
-
+		// Check if losing conditions are met; if so, end the game. 
 		if(gameOver) {
 			infoBar.children[0].text = 'Game over!';
 			infoBar.levelVisible = true;
