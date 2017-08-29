@@ -325,7 +325,7 @@ Game = function(canvasId) {
     	roundRadius: 10, isVisible: false,
     	children:
     	[
-    		new BABYLON.Text2D("Player has used the ability " + abilityName, { id: "skillInfo", fontName: "20pt Arial", marginAlignment: "h: center, v: center" })
+    		new BABYLON.Text2D("Player has used the ability " + abilityName, { id: "skillInfo", fontName: "20pt Fire Sans", fontSuperSample: true, fontSignedDistanceField: true, marginAlignment: "h: center, v: center" })
     		//new BABYLON.Text2D(abilityUsed, { id: "abilityUsed", fontName: "20pt Arial", marginAlignment: "h: right, v: center"})
     	]
     });
@@ -360,6 +360,7 @@ Game = function(canvasId) {
     	Needed for when the player wants to end the turn early without attacking or moving. 
     */
     window.addEventListener("keydown", function (evt) {
+
     	// End turn manually. SPACEBAR
     	if (evt.keyCode == 32 && playerTurn) {
     		var animatable = scene.getAnimatableByTarget(player);
@@ -373,10 +374,11 @@ Game = function(canvasId) {
     	// Leave skill aim mode. ESC
     	else if(evt.keyCode == 27 && aimSkill) {
     		for(var ability in player.abilities) {
-						if(player.abilities[ability].active == true) {
-							player.abilities[ability].active = false;
-						}
-					}
+				if(player.abilities[ability].active == true) {
+					player.abilities[ability].active = false;
+				}
+			}
+			infoBar.levelVisible = false;					
 			aimSkill = false;	
     	}    
     	// Stop music or resume it.
@@ -385,6 +387,67 @@ Game = function(canvasId) {
     			music.pause();
     		else if(music.isPaused)
     			music.play();
+    	}
+    	// Player abilities that are accessed via shortcuts (1-4).
+    	else if(evt.keyCode == 49 && playerTurn) {    		   	
+	    	if(player.abilities.player_skill_1.cooldown == 0) {
+	    		infoBar.children[0].text = "Press ESC to cancel aiming";
+				infoBar.levelVisible = true;
+	    		aimSkill = true;
+	    		player.abilities.player_skill_1.active = true;		    		    	
+	    	}
+	    	else {
+	    		infoBar.children[0].text = "This ability is still on cooldown!";
+				infoBar.levelVisible = true;
+				setTimeout(function() {
+					infoBar.levelVisible = false;													
+				}, 2000);				
+	    	}
+    	}
+    	else if(evt.keyCode == 50 && playerTurn) {    		   	
+	    	if(player.abilities.player_skill_2.cooldown == 0) {
+	    		infoBar.children[0].text = "Press ESC to cancel aiming";
+				infoBar.levelVisible = true;
+	    		aimSkill = true;
+	    		player.abilities.player_skill_2.active = true;		    		    	
+	    	}
+	    	else {
+	    		infoBar.children[0].text = "This ability is still on cooldown!";
+				infoBar.levelVisible = true;
+				setTimeout(function() {
+					infoBar.levelVisible = false;													
+				}, 2000);				
+	    	}
+    	}
+    	else if(evt.keyCode == 51 && playerTurn) {    		   	
+	    	if(player.abilities.player_skill_3.cooldown == 0) {
+	    		infoBar.children[0].text = "Press ESC to cancel aiming";
+				infoBar.levelVisible = true;
+	    		aimSkill = true;
+	    		player.abilities.player_skill_3.active = true;		    		    	
+	    	}
+	    	else {
+	    		infoBar.children[0].text = "This ability is still on cooldown!";
+				infoBar.levelVisible = true;
+				setTimeout(function() {
+					infoBar.levelVisible = false;													
+				}, 2000);				
+	    	}
+    	}
+    	else if(evt.keyCode == 52 && playerTurn) {    		   	
+	    	if(player.abilities.player_skill_4.cooldown == 0) {
+	    		infoBar.children[0].text = "Press ESC to cancel aiming";
+				infoBar.levelVisible = true;
+	    		aimSkill = true;
+	    		player.abilities.player_skill_4.active = true;		    	    	
+	    	}
+	    	else {
+	    		infoBar.children[0].text = "This ability is still on cooldown!";
+				infoBar.levelVisible = true;
+				setTimeout(function() {
+					infoBar.levelVisible = false;													
+				}, 2000);				
+	    	}
     	}
     	// else if(evt.keyCode == 67) {
     	// 	music.stop();
@@ -764,8 +827,7 @@ Game = function(canvasId) {
 	    		infoBar.children[0].text = "Press ESC to cancel aiming";
 				infoBar.levelVisible = true;
 	    		aimSkill = true;
-	    		player.abilities.player_skill_1.active = true;
-		    	player.abilities.player_skill_1.cooldown = player.abilities.player_skill_1.cost;	    	
+	    		player.abilities.player_skill_1.active = true;		    		    	
 	    	}
 	    	else {
 	    		infoBar.children[0].text = "This ability is still on cooldown!";
@@ -782,8 +844,7 @@ Game = function(canvasId) {
 	    		infoBar.children[0].text = "Press ESC to cancel aiming";
 				infoBar.levelVisible = true;
 	    		aimSkill = true;
-	    		player.abilities.player_skill_2.active = true;    		
-		    	player.abilities.player_skill_2.cooldown = player.abilities.player_skill_2.cost;		    	    	
+	    		player.abilities.player_skill_2.active = true;    		    			    	    	
 	    	}
 	    	else {
 	    		infoBar.children[0].text = "This ability is still on cooldown!";
@@ -800,8 +861,7 @@ Game = function(canvasId) {
 	    		infoBar.children[0].text = "Press ESC to cancel aiming";
 				infoBar.levelVisible = true;
 	    		aimSkill = true;
-	    		player.abilities.player_skill_3.active = true; 
-		    	player.abilities.player_skill_3.cooldown = player.abilities.player_skill_3.cost;	    	
+	    		player.abilities.player_skill_3.active = true; 		    		    	
 	    	}
 	    	else {
 	    		infoBar.children[0].text = "This ability is still on cooldown!";
@@ -818,8 +878,7 @@ Game = function(canvasId) {
 	    		infoBar.children[0].text = "Press ESC to cancel aiming";
 				infoBar.levelVisible = true;
 	    		aimSkill = true;
-	    		player.abilities.player_skill_4.active = true; 
-		    	player.abilities.player_skill_4.cooldown = player.abilities.player_skill_4.cost;	    	
+	    		player.abilities.player_skill_4.active = true; 		    	    	
 	    	}
 	    	else {
 	    		infoBar.children[0].text = "This ability is still on cooldown!";
@@ -853,6 +912,27 @@ Game = function(canvasId) {
 
 	// A function that is called when both parties are finished and mechanic parameters must be re-evalued. It prepares for the next round.
 	function roundEndClear() {
+
+		if(gameOver) {
+			infoBar.children[0].text = 'Game over!';
+			infoBar.levelVisible = true;
+			setTimeout( function() {
+				music.stop();
+				sound10.play();
+				infoBar.levelVisible = false;					
+				document.getElementById('imageCanvas').getElementsByTagName('img')[0].src = 'img/intro/GameOver.png';
+				document.getElementById('renderCanvas').style.display = 'none';
+				document.getElementById('imageCanvas').style.display = 'block';
+				document.getElementById('imageCanvas').style.animation = 'fadeIn 2.5s linear 0s 1 normal forwards running';
+				document.getElementById('imageCanvas').addEventListener('click', function(e) {
+					// Stop the event from firing automatically.
+    				e.stopPropagation();
+    				// Execute the scene reloading.
+    				onClickTriggerEnding();
+				})
+			}, 3000);
+			return;
+		}			
 
 		var dangerousTile = scene.getMeshByID('dangerousTile');
 		if(dangerousTile != undefined) {
@@ -1501,6 +1581,7 @@ Game = function(canvasId) {
 			
 			var hit = false;				
 			
+			// Check if targeted tile is in range.
 			if(distanceX <= range && distanceZ <= range) {
 					
 				for(var j = 0; j < enemies.length; j++) {
@@ -1629,14 +1710,19 @@ Game = function(canvasId) {
 						break;
 					}					
 				}
+				// No enemy was hit.
 				if(!hit) {
-						infoBar.children[0].text = "No enemy was hit!";
+						infoBar.children[0].text = "No enemy was hit!";						
 						infoBar.levelVisible = true;
+						aimSkill = false;
+						player.abilities[ability].active = false;
 						setTimeout(function() {
 							infoBar.levelVisible = false;																
 						}, 3000);
+						return;
 				}
 			}
+			// Target out of reach.
 			else {
 				infoBar.children[0].text = "That's too far away!";
 				infoBar.levelVisible = true;
@@ -1646,14 +1732,15 @@ Game = function(canvasId) {
 					infoBar.levelVisible = false;													
 				}, 3000);				
 				return;
-			}	
+			}
+
+			// Play corresponding sounds.
 			if(ability == 'player_skill_1')		
 				sound1.play();	
 			else if(ability == 'player_skill_2')
 				sound9.play();
 			else if(ability == 'player_skill_3')
 				sound8.play();
-
 
 			// Reset values.
 			playerTurn = false;
@@ -1754,6 +1841,7 @@ Game = function(canvasId) {
 			}			
 		}	
 		// Set ability on its cooldown.
+		console.log('STILL HERE');
 		unit.abilities[ability].cooldown = unit.abilities[ability].cost;	
 	}
 
