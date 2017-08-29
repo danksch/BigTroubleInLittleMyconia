@@ -9,7 +9,7 @@ Game = function(canvasId) {
 	var preloader = new BABYLON.AssetsManager(scene);
 
 	// Load sound files via asset manager.
-	var sound1, sound2, sound3, sound4, sound5, sound6, sound7, sound8, sound9, music;
+	var sound1, sound2, sound3, sound4, sound5, sound6, sound7, sound8, sound9, sound10, music;
 	var musicTrack = new BABYLON.SoundTrack(scene);
 	var soundTask = preloader.addBinaryFileTask("sound_1", "assets/sounds/blade.aac");
 	soundTask.onSuccess = function (task) {		
@@ -51,10 +51,14 @@ Game = function(canvasId) {
 	};
 	var soundTask10 = preloader.addBinaryFileTask("sound_10", "assets/sounds/music.aac");
 	soundTask10.onSuccess = function (task) {
-		music = new BABYLON.Sound("Sound_10", task.data, scene, function() { music.play(2); }, { loop: true } );
+		music = new BABYLON.Sound("sound_10", task.data, scene, function() { music.play(2); }, { loop: true } );
 		musicTrack.AddSound(music);		
 		musicTrack.setVolume(0.5);
 	};
+	var soundTask11 = preloader.addBinaryFileTask("sound_11", "assets/sounds/gameover.aac");
+	soundTask11.onSuccess = function (task) {
+		sound10 = new BABYLON.Sound("sound_10", task.data, scene);
+	}
 	
 	// Set up camera.
 	var camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3.Zero(), scene);
@@ -861,7 +865,7 @@ Game = function(canvasId) {
 				setTimeout(function() {
 					infoBar.levelVisible = false;
 				}, 3000);
-				if(player.position.x == dangerousTile.position.x && player.position.z == tile.position.z) {
+				if(player.position.x == dangerousTile.position.x && player.position.z == dangerousTile.position.z) {
 					player.health -= dangerousTile.damage;
 				}
 				dangerousTile.dispose();
@@ -1096,7 +1100,7 @@ Game = function(canvasId) {
 		reloadScene('grasslands');			
 	}
 
-	// Callback function for event that is triggered at game ending.
+	// Callback function for event that is triggered at game ending / game over.
 	function onClickTriggerEnding() {
 		// Remove trigger.
 		document.getElementById('imageCanvas').removeEventListener('click', function(e) {
@@ -1424,13 +1428,25 @@ Game = function(canvasId) {
 				useAbility(enemy, attackType);
 
 			if(gameOver) {
-				infoBar.children[0].text = 'Game over! Press F5 to start again!';
+				infoBar.children[0].text = 'Game over!';
 				infoBar.levelVisible = true;
 				setTimeout( function() {
-					infoBar.levelVisible = false;
+					music.stop();
+					sound10.play();
+					infoBar.levelVisible = false;					
+					document.getElementById('imageCanvas').getElementsByTagName('img')[0].src = 'img/intro/GameOver.png';
+					document.getElementById('renderCanvas').style.display = 'none';
+					document.getElementById('imageCanvas').style.display = 'block';
+					document.getElementById('imageCanvas').style.animation = 'fadeIn 2.5s linear 0s 1 normal forwards running';
+					document.getElementById('imageCanvas').addEventListener('click', function(e) {
+						// Stop the event from firing automatically.
+	    				e.stopPropagation();
+	    				// Execute the scene reloading.
+	    				onClickTriggerEnding();
+					})
 				}, 3000);
 				return;
-			}
+			}			
 			
 			// Select next enemy.				
 			currentEnemy--;
