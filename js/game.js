@@ -1687,6 +1687,7 @@ Game = function(canvasId) {
 							// Invoke a particle system that simulates a teleportation move if the player.
 							player.color = new BABYLON.Color4(0.0, 0.0, 0.0, 0.0);
 							var particleSkillAnimation = emitParticles(tile);
+							player.hpRect.levelVisible = false;
 							particleSkillAnimation.start();	
 
 							// Let the player reappear when the particle system 'animation' has approximately finished. 
@@ -1702,6 +1703,7 @@ Game = function(canvasId) {
 								var projection = BABYLON.Vector3.Project(targetVector, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
 								player.hpRect.x = projection.x;
 								player.hpRect.y = engine.getRenderHeight() - projection.y;
+								player.hpRect.levelVisible = true;
 
 								// Make the player turn to the back of his enemy.
 								if(player.position.x > enemy.position.x)
@@ -1835,7 +1837,7 @@ Game = function(canvasId) {
 		    				// Stop the event from firing automatically.
 		    				e.stopPropagation();
 		    				// Execute the scene reloading.
-		    				onClickTrigger();	
+		    				onClickTriggerEnding();	
 			    	});								
 					}, 3000);
 					return;
@@ -1851,7 +1853,7 @@ Game = function(canvasId) {
 	    				// Stop the event from firing automatically.
 	    				e.stopPropagation();
 	    				// Reload page to play again.	    				 
-	    				onClickTriggerEnding();	    				
+	    				onClickTrigger();	    				
 		    		});	  					
 				}, 3000);
 				return;
