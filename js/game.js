@@ -205,7 +205,7 @@ Game = function(canvasId) {
 			{
 				id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 12 - 2, height: 15, fill: "#FF8C00FF", roundRadius: 0
 			}),
-			new BABYLON.Text2D("100", {id: "playerHPtext", fontName: "11pt Century Gothic", fontSuperSample: false, fontSignedDistanceField: false, marginAlignment: "h: right, v: center", marginRight: 5, 
+			new BABYLON.Text2D("100", {id: "playerHPtext", fontName: "1.5em Century Gothic", fontSuperSample: false, fontSignedDistanceField: false, marginAlignment: "h: right, v: center", marginRight: 5, 
 				defaultFontColor: new BABYLON.Color4(0.0, 0.0, 0.0, 1.0) })
 		]
 	});
@@ -361,13 +361,15 @@ Game = function(canvasId) {
     
     // Add a skill info bar at the top of the screen.
     var abilityName;
+    var infoBarWidth = canvas2D.width / 2 + canvas2D.width * (1 / 30);
+    var infoBarHeight = canvas2D.height / 8.5;    
     var infoBar = new BABYLON.Rectangle2D({
-    	id: "infoBar", parent: canvas2D, width: 700, height: 80, x: canvas.width / 2 - 350, y: canvas2D.height - 80,
-    	fill: "#4040408F", border: "#A040A0D0, #FFFFFF", borderThickness: 5,
-    	roundRadius: 10, isVisible: false,
+    	id: "infoBar", parent: canvas2D, width: infoBarWidth, height: infoBarHeight, x: (canvas.width - infoBarWidth) / 2, y: canvas2D.height - infoBarHeight,
+    	fill: "#4040408F", border: "#5f9ea0D0, #FFFFFF", borderThickness: 5,
+    	roundRadius: 4, isVisible: false,
     	children:
     	[
-    		new BABYLON.Text2D("Player has used the ability " + abilityName, { id: "skillInfo", fontName: "20pt Fire Sans", fontSuperSample: true, fontSignedDistanceField: true, marginAlignment: "h: center, v: center" })
+    		new BABYLON.Text2D("Player has used the ability " + abilityName, { id: "skillInfo", fontName: getFont(), fontSuperSample: true, fontSignedDistanceField: true, marginAlignment: "h: center, v: center" })
     		//new BABYLON.Text2D(abilityUsed, { id: "abilityUsed", fontName: "20pt Arial", marginAlignment: "h: right, v: center"})
     	]
     });
@@ -1100,7 +1102,7 @@ Game = function(canvasId) {
 				{
 					id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 12 - 2, height: 15, fill: "#FF8C00FF", roundRadius: 0
 				}),
-				new BABYLON.Text2D("100", {id: "playerHPtext", fontName: "11pt Century Gothic", fontSuperSample: false, fontSignedDistanceField: false, marginAlignment: "h: right, v: center", marginRight: 5, 
+				new BABYLON.Text2D("100", {id: "playerHPtext", fontName: "1.5em Cenutry Gothic", fontSuperSample: false, fontSignedDistanceField: false, marginAlignment: "h: right, v: center", marginRight: 5, 
 					defaultFontColor: new BABYLON.Color4(0.0, 0.0, 0.0, 1.0) })
 			]
 		});		
@@ -1233,6 +1235,7 @@ Game = function(canvasId) {
 			}
 		}
 		preloader.load();
+		music.play(2);
 	}
 
 	// Callback function for event that is triggered at level change.
@@ -1363,7 +1366,7 @@ Game = function(canvasId) {
 				{
 					id: "insideRect", marginAlignment: "v: center, h: right", marginRight: 1, width: canvas2D.width / 12 - 2, height: 15, fill: "#FF8C00FF", roundRadius: 0					
 				}),
-				new BABYLON.Text2D(enemyDummy.health.toString(), {id: "enemyHPtext", fontName: "11pt Cenutry Gothic", fontSuperSample: false, fontSignedDistanceField: false, marginAlignment: "h: right, v: center", marginRight: 5, 
+				new BABYLON.Text2D(enemyDummy.health.toString(), {id: "enemyHPtext", fontName: "1.5em Cenutry Gothic", fontSuperSample: false, fontSignedDistanceField: false, marginAlignment: "h: right, v: center", marginRight: 5, 
 					defaultFontColor: new BABYLON.Color4(0.0, 0.0, 0.0, 1.0)	
 				})
 			]
@@ -2193,6 +2196,15 @@ Game = function(canvasId) {
 		
 		animateTileVisibility(dangerousTile, 45, 0.1);
 	}
+
+	// Calculate font size depending on canvas dimensions.
+	function getFont() {
+    	var fontBase = 1296;
+    	var fontSize = 30;
+    	var ratio = fontSize / fontBase;
+    	var size = canvas2D.width * ratio;
+    	return (size|0) + 'px Franklin Gothic Medium';
+    }
 	
 };
 
